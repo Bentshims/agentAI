@@ -1,0 +1,869 @@
+{
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "443b719a-5361-406b-8695-546b8b884ab0",
+            "name": "When Called By WF-0",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "typeVersion": 1,
+            "position": [
+                -752,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu analyses une demande de prospection et tu renvoies STRICTEMENT un JSON valide avec: type, secteur, localisation, description_cible, nb_resultats, requetes_google (array), criteres_scoring.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $('When Called By WF-0').first().json.texte }}\"\n    }\n  ]\n}",
+                "options": {}
+            },
+            "id": "9cbb08e2-c37b-4785-a28b-dba0cef0534f",
+            "name": "DeepSeek Analyser Demande",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -496,
+                208
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const item = $input.first().json;\nconst content = item.choices[0].message.content;\n\nlet params;\ntry {\n  const clean = content.replace(/```json|```/g, '').trim();\n  params = JSON.parse(clean);\n} catch(e) {\n  throw new Error('Erreur parsing JSON DeepSeek: ' + content);\n}\n\n// Récupérer chat_id depuis WF-0\nconst triggerData = $('When Called By WF-0').first().json;\nparams.chat_id = String(triggerData.chat_id || '');\nparams.message_original = triggerData.texte || '';\nparams.session_id = 'acq_' + Date.now();\nparams.created_at = new Date().toISOString();\n\n// Validation des champs critiques\nif (!params.requetes_google || !Array.isArray(params.requetes_google) || params.requetes_google.length === 0) {\n  throw new Error('Champ requetes_google manquant ou vide dans la réponse DeepSeek');\n}\nif (!['entreprise', 'freelance', 'particulier'].includes(params.type)) {\n  throw new Error('Type de profil invalide: ' + params.type);\n}\n\nreturn [{ json: params }];"
+            },
+            "id": "0c2417c4-7fcf-4c6f-a4be-82bee2a4d47d",
+            "name": "Extraire Parametres Recherche",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -256,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "=🔍 *Recherche lancée !*\n\n📋 *Cible :* {{ $json.description_cible }}\n🏷️ *Type :* `{{ $json.type }}`\n📍 *Localisation :* {{ $json.localisation }}\n🏭 *Secteur :* {{ $json.secteur }}\n🎯 *Objectif :* {{ $json.nb_resultats }} profils\n\n_Recherche en cours sur Google et LinkedIn... ⏳_",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "2a6e6289-8adb-49e7-80d5-057ed4211ffe",
+            "name": "Telegram Accuse Reception",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                0,
+                0
+            ],
+            "webhookId": "aa3c2aba-1f7d-432c-ad17-7abd205a50d3",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const params = $input.first().json;\n\nreturn params.requetes_google.map((requete, index) => ({\n  json: {\n    ...params,\n    requete_actuelle: requete,\n    requete_index: index + 1\n  }\n}));"
+            },
+            "id": "61e9583e-937c-485a-8b4d-9f88eb9be4ec",
+            "name": "Creer Items par Requete Google",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://www.googleapis.com/customsearch/v1",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "key",
+                            "value": "={{ $vars.GOOGLE_API_KEY }}"
+                        },
+                        {
+                            "name": "cx",
+                            "value": "={{ $vars.GOOGLE_CX_ID }}"
+                        },
+                        {
+                            "name": "q",
+                            "value": "={{ $json.requete_actuelle }}"
+                        },
+                        {
+                            "name": "num",
+                            "value": "10"
+                        },
+                        {
+                            "name": "hl",
+                            "value": "fr"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "neverError": true
+                        }
+                    }
+                }
+            },
+            "id": "bc3ee8fa-8107-41d6-8142-1979703bf262",
+            "name": "Google Custom Search API",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                256,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.first().json;\nconst items = data.items || [];\n\nif (items.length === 0) return [];\n\nreturn items.map(item => {\n  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;\n  const emailsSnippet = (item.snippet || '').match(emailRegex) || [];\n  const emailFiltre = emailsSnippet.filter(e => !e.includes('example') && !e.includes('test') && !e.includes('domain'));\n\n  const telRegex = /(?:\\+33|0)[1-9](?:[\\s.\\-]?\\d{2}){4}/g;\n  const telsSnippet = (item.snippet || '').match(telRegex) || [];\n\n  return {\n    json: {\n      source: 'google',\n      titre: item.title || '',\n      url: item.link || '',\n      snippet: item.snippet || '',\n      domaine: (() => { try { return new URL(item.link).hostname; } catch(e) { return ''; } })(),\n      email: emailFiltre[0] || null,\n      telephone: telsSnippet[0] || null,\n      linkedin_url: item.link && item.link.includes('linkedin.com') ? item.link : null\n    }\n  };\n});"
+            },
+            "id": "972e3cb9-6747-4461-acd6-aeddbbed3d80",
+            "name": "Extraire Resultats Google",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                512,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "resultats_google",
+                "options": {}
+            },
+            "id": "6d914f1d-2ffb-42d7-8435-9dec93225b87",
+            "name": "Agreger Resultats Google",
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                752,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.apify.com/v2/acts/curious_coder~linkedin-people-search/run-sync-get-dataset-items",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "token",
+                            "value": "={{ $vars.APIFY_API_TOKEN }}"
+                        },
+                        {
+                            "name": "timeout",
+                            "value": "180"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {}
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "neverError": true
+                        }
+                    },
+                    "timeout": 200000
+                }
+            },
+            "id": "a2ce6159-f782-437c-9e13-ab72720e9ba6",
+            "name": "Apify LinkedIn Scraper",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1008,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const raw = $input.first().json;\nconst results = Array.isArray(raw) ? raw : (raw.data || [raw]);\n\nif (!results || results.length === 0) return [];\n\nreturn results\n  .filter(item => item && (item.name || item.fullName || item.headline))\n  .map(item => ({\n    json: {\n      source: 'linkedin',\n      nom: item.name || item.fullName || '',\n      titre_poste: item.headline || item.title || '',\n      linkedin_url: item.profileUrl || item.url || null,\n      localisation: item.location || null,\n      entreprise_actuelle: item.currentCompany || null,\n      email: item.email || null,\n      telephone: item.phone || null,\n      site_web: item.websiteUrl || null,\n      url: item.profileUrl || item.url || null\n    }\n  }));"
+            },
+            "id": "09ebe0af-4210-4c40-92cc-7af5e6fd5eb0",
+            "name": "Extraire Resultats LinkedIn",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1264,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const googleAggr = $('Agreger Resultats Google').first().json;\nconst googleData = googleAggr.resultats_google || [];\n\nconst linkedinItems = $input.all();\nconst linkedinData = linkedinItems.map(i => i.json);\n\nconst params = $('Extraire Parametres Recherche').first().json;\n\nconst allResults = [...googleData, ...linkedinData];\nconst unique = [];\nconst seen = new Set();\nfor (const r of allResults) {\n  const key = r.url || r.linkedin_url || r.nom || r.titre;\n  if (key && !seen.has(key)) {\n    seen.add(key);\n    unique.push(r);\n  }\n}\n\nreturn [{\n  json: {\n    session_id: params.session_id,\n    chat_id: params.chat_id,\n    type: params.type,\n    secteur: params.secteur,\n    localisation: params.localisation,\n    description_cible: params.description_cible,\n    criteres_scoring: params.criteres_scoring,\n    total_trouve: unique.length,\n    resultats: unique\n  }\n}];"
+            },
+            "id": "0ee2cc3e-ead6-4096-8a07-5d4e8120595d",
+            "name": "Combiner Google et LinkedIn",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1504,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.first().json;\nconst resultats = data.resultats || [];\n\nconst exclusions = [\n  'linkedin.com', 'facebook.com', 'twitter.com', 'instagram.com',\n  'pagesjaunes.fr', 'societe.com', 'kompass.com', 'google.com',\n  'youtube.com', 'wikipedia.org'\n];\n\nconst sitesAScraper = resultats\n  .filter(r => {\n    const url = r.url || r.site_web;\n    if (!url || !url.startsWith('http')) return false;\n    return !exclusions.some(ex => url.includes(ex));\n  })\n  .map(r => ({ url: r.url || r.site_web, source_data: r }))\n  .slice(0, 10);\n\nreturn sitesAScraper.map(site => ({\n  json: {\n    url_a_scraper: site.url,\n    source_data: site.source_data,\n    contexte: {\n      session_id: data.session_id,\n      chat_id: data.chat_id,\n      type: data.type,\n      secteur: data.secteur,\n      localisation: data.localisation,\n      description_cible: data.description_cible,\n      criteres_scoring: data.criteres_scoring,\n      total_resultats: data.total_trouve,\n      tous_resultats: data.resultats\n    }\n  }\n}));"
+            },
+            "id": "1d71e045-cdd9-4edd-b749-53b3bf805967",
+            "name": "Preparer Sites a Scraper",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1760,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.apify.com/v2/acts/apify~website-content-crawler/run-sync-get-dataset-items",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "token",
+                            "value": "={{ $vars.APIFY_API_TOKEN }}"
+                        },
+                        {
+                            "name": "timeout",
+                            "value": "60"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {}
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "neverError": true
+                        }
+                    },
+                    "timeout": 70000
+                }
+            },
+            "id": "d23cc42e-b019-4c4d-9c66-411695236e2f",
+            "name": "Apify Website Content Crawler",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2000,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const allItems = $input.all();\nconst prospects = [];\n\nfor (const item of allItems) {\n  const scraped = Array.isArray(item.json) ? item.json[0] : item.json;\n  if (!scraped) continue;\n\n  const contexte = scraped.contexte || {};\n  const sourceData = scraped.source_data || {};\n  const content = scraped.text || scraped.markdown || scraped.content || '';\n\n  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;\n  const emails = content.match(emailRegex) || [];\n  const emailFiltre = emails.filter(e =>\n    !e.includes('example') && !e.includes('test') &&\n    !e.includes('domain') && !e.includes('sentry') && !e.includes('your@')\n  );\n\n  const telRegex = /(?:\\+33|0)[1-9](?:[\\s.\\-]?\\d{2}){4}/g;\n  const tels = content.match(telRegex) || [];\n\n  const prospect = {\n    type: contexte.type || 'inconnu',\n    nom: sourceData.titre || sourceData.nom || scraped.title || 'Inconnu',\n    email: emailFiltre[0] || sourceData.email || null,\n    telephone: tels[0] || sourceData.telephone || null,\n    site_web: scraped.url || sourceData.url || null,\n    linkedin_url: sourceData.linkedin_url || null,\n    localisation: contexte.localisation || sourceData.localisation || null,\n    secteur: contexte.secteur || null,\n    description: content ? content.substring(0, 600).trim() : (sourceData.snippet || null),\n    score_pertinence: 0,\n    statut: 'trouve',\n    session_id: contexte.session_id || null,\n    chat_id: contexte.chat_id || null,\n    criteres_scoring: contexte.criteres_scoring || null,\n    date_creation: new Date().toISOString()\n  };\n\n  if (prospect.email || prospect.telephone || prospect.linkedin_url) {\n    prospects.push({ json: prospect });\n  }\n}\n\nif (prospects.length === 0) {\n  const contexte = allItems[0]?.json?.contexte || {};\n  const tousResultats = contexte.tous_resultats || [];\n\n  return tousResultats\n    .filter(r => r.email || r.telephone || r.linkedin_url)\n    .map(r => ({\n      json: {\n        type: contexte.type || 'inconnu',\n        nom: r.nom || r.titre || 'Inconnu',\n        email: r.email || null,\n        telephone: r.telephone || null,\n        site_web: r.url || r.site_web || null,\n        linkedin_url: r.linkedin_url || null,\n        localisation: r.localisation || contexte.localisation || null,\n        secteur: contexte.secteur || null,\n        description: r.snippet || null,\n        score_pertinence: 0,\n        statut: 'trouve',\n        session_id: contexte.session_id || null,\n        chat_id: contexte.chat_id || null,\n        criteres_scoring: contexte.criteres_scoring || null,\n        date_creation: new Date().toISOString()\n      }\n    }));\n}\n\nreturn prospects;"
+            },
+            "id": "309dc8a1-2a44-404d-9b48-5dac4a4081f1",
+            "name": "Formater et Enrichir Prospects",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2256,
+                208
+            ]
+        },
+        {
+            "parameters": {
+                "schema": "public",
+                "table": "prospects",
+                "columns": {
+                    "0": "t",
+                    "1": "y",
+                    "2": "p",
+                    "3": "e",
+                    "4": ",",
+                    "5": "n",
+                    "6": "o",
+                    "7": "m",
+                    "8": ",",
+                    "9": "e",
+                    "10": "m",
+                    "11": "a",
+                    "12": "i",
+                    "13": "l",
+                    "14": ",",
+                    "15": "t",
+                    "16": "e",
+                    "17": "l",
+                    "18": "e",
+                    "19": "p",
+                    "20": "h",
+                    "21": "o",
+                    "22": "n",
+                    "23": "e",
+                    "24": ",",
+                    "25": "s",
+                    "26": "i",
+                    "27": "t",
+                    "28": "e",
+                    "29": "_",
+                    "30": "w",
+                    "31": "e",
+                    "32": "b",
+                    "33": ",",
+                    "34": "l",
+                    "35": "i",
+                    "36": "n",
+                    "37": "k",
+                    "38": "e",
+                    "39": "d",
+                    "40": "i",
+                    "41": "n",
+                    "42": "_",
+                    "43": "u",
+                    "44": "r",
+                    "45": "l",
+                    "46": ",",
+                    "47": "l",
+                    "48": "o",
+                    "49": "c",
+                    "50": "a",
+                    "51": "l",
+                    "52": "i",
+                    "53": "s",
+                    "54": "a",
+                    "55": "t",
+                    "56": "i",
+                    "57": "o",
+                    "58": "n",
+                    "59": ",",
+                    "60": "s",
+                    "61": "e",
+                    "62": "c",
+                    "63": "t",
+                    "64": "e",
+                    "65": "u",
+                    "66": "r",
+                    "67": ",",
+                    "68": "d",
+                    "69": "e",
+                    "70": "s",
+                    "71": "c",
+                    "72": "r",
+                    "73": "i",
+                    "74": "p",
+                    "75": "t",
+                    "76": "i",
+                    "77": "o",
+                    "78": "n",
+                    "79": ",",
+                    "80": "s",
+                    "81": "c",
+                    "82": "o",
+                    "83": "r",
+                    "84": "e",
+                    "85": "_",
+                    "86": "p",
+                    "87": "e",
+                    "88": "r",
+                    "89": "t",
+                    "90": "i",
+                    "91": "n",
+                    "92": "e",
+                    "93": "n",
+                    "94": "c",
+                    "95": "e",
+                    "96": ",",
+                    "97": "s",
+                    "98": "t",
+                    "99": "a",
+                    "100": "t",
+                    "101": "u",
+                    "102": "t",
+                    "103": ",",
+                    "104": "s",
+                    "105": "e",
+                    "106": "s",
+                    "107": "s",
+                    "108": "i",
+                    "109": "o",
+                    "110": "n",
+                    "111": "_",
+                    "112": "i",
+                    "113": "d",
+                    "114": ",",
+                    "115": "c",
+                    "116": "h",
+                    "117": "a",
+                    "118": "t",
+                    "119": "_",
+                    "120": "i",
+                    "121": "d",
+                    "122": ",",
+                    "123": "c",
+                    "124": "r",
+                    "125": "i",
+                    "126": "t",
+                    "127": "e",
+                    "128": "r",
+                    "129": "e",
+                    "130": "s",
+                    "131": "_",
+                    "132": "s",
+                    "133": "c",
+                    "134": "o",
+                    "135": "r",
+                    "136": "i",
+                    "137": "n",
+                    "138": "g",
+                    "139": ",",
+                    "140": "d",
+                    "141": "a",
+                    "142": "t",
+                    "143": "e",
+                    "144": "_",
+                    "145": "c",
+                    "146": "r",
+                    "147": "e",
+                    "148": "a",
+                    "149": "t",
+                    "150": "i",
+                    "151": "o",
+                    "152": "n",
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "id": 0,
+                        "score_pertinence": 0
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "type",
+                            "displayName": "type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "nom",
+                            "displayName": "nom",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "email",
+                            "displayName": "email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "telephone",
+                            "displayName": "telephone",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "site_web",
+                            "displayName": "site_web",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "linkedin_url",
+                            "displayName": "linkedin_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "localisation",
+                            "displayName": "localisation",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "secteur",
+                            "displayName": "secteur",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "score_pertinence",
+                            "displayName": "score_pertinence",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "statut",
+                            "displayName": "statut",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "session_id",
+                            "displayName": "session_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "chat_id",
+                            "displayName": "chat_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "criteres_scoring",
+                            "displayName": "criteres_scoring",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "date_creation",
+                            "displayName": "date_creation",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {
+                    "skipOnConflict": true
+                }
+            },
+            "id": "253fca09-589c-4867-b2c1-a49ac41a0640",
+            "name": "PostgreSQL Inserer Prospects",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                2512,
+                208
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "=✅ *Scraping terminé !*\n\n💾 *{{ $input.all().length }} prospects sauvegardés en base*\n📂 Session : `{{ $('Extraire Parametres Recherche').first().json.session_id }}`\n\n🤖 *WF-2 en cours :* analyse et scoring DeepSeek...\n_Tu recevras les fiches complètes dans quelques instants._",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "4f2cf953-3b96-41db-8f6e-45b1686d520a",
+            "name": "Telegram Rapport Final WF1",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                2752,
+                208
+            ],
+            "webhookId": "6b144954-32c3-44cf-9c66-0032cac9c967",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "tJIuGWj6gv6G6i8j",
+                    "mode": "id"
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "id": "c82daa2f-c06c-44a1-b8c7-49d06b5557d6",
+            "name": "Lancer WF-2 Analyse",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.1,
+            "position": [
+                3008,
+                208
+            ]
+        }
+    ],
+    "connections": {
+        "When Called By WF-0": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Analyser Demande",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Analyser Demande": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Parametres Recherche",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Parametres Recherche": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Accuse Reception",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Creer Items par Requete Google",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Creer Items par Requete Google": {
+            "main": [
+                [
+                    {
+                        "node": "Google Custom Search API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Custom Search API": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Resultats Google",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Resultats Google": {
+            "main": [
+                [
+                    {
+                        "node": "Agreger Resultats Google",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Agreger Resultats Google": {
+            "main": [
+                [
+                    {
+                        "node": "Apify LinkedIn Scraper",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Apify LinkedIn Scraper": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Resultats LinkedIn",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Resultats LinkedIn": {
+            "main": [
+                [
+                    {
+                        "node": "Combiner Google et LinkedIn",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Combiner Google et LinkedIn": {
+            "main": [
+                [
+                    {
+                        "node": "Preparer Sites a Scraper",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparer Sites a Scraper": {
+            "main": [
+                [
+                    {
+                        "node": "Apify Website Content Crawler",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Apify Website Content Crawler": {
+            "main": [
+                [
+                    {
+                        "node": "Formater et Enrichir Prospects",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Formater et Enrichir Prospects": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Inserer Prospects",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Inserer Prospects": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Rapport Final WF1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Rapport Final WF1": {
+            "main": [
+                [
+                    {
+                        "node": "Lancer WF-2 Analyse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+    }
+}

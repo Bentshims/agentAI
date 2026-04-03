@@ -1,0 +1,422 @@
+{
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "5760d628-ae03-4188-81f9-991cf2ee13ea",
+            "name": "Execute Workflow Trigger",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "typeVersion": 1,
+            "position": [
+                -784,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT id, type, nom, email, telephone, site_web, linkedin_url, localisation, secteur, description, session_id, chat_id, criteres_scoring FROM prospects WHERE session_id = $1 AND statut = 'trouve' AND score_pertinence = 0 ORDER BY id ASC",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{[ $json.session_id ]}}"
+                }
+            },
+            "id": "119d19c5-2e1a-4b81-9d53-7924101e97ce",
+            "name": "PostgreSQL Charger Prospects Session",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -528,
+                9456
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-001",
+                            "leftValue": "={{ $input.all().length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "1ee599a9-f8a7-489b-a94a-3046b7cef428",
+            "name": "IF Des Prospects a Analyser",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -288,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "⚠️ *Aucun prospect à analyser* pour cette session.\n\nLance une nouvelle recherche en m'envoyant ta demande de prospection.",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "52011a52-ccfc-49ab-834f-9fd4ea969d77",
+            "name": "Telegram Aucun Prospect",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                -32,
+                9648
+            ],
+            "webhookId": "1067d1d9-227a-4a0f-991e-0fb9a06b91ad",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {
+                    "reset": false
+                }
+            },
+            "id": "847f9494-107b-4c5f-a037-a28ad2e9c9f7",
+            "name": "Split Boucle Prospects",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                -32,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "options": {}
+            },
+            "id": "25c0f90e-e1df-4b2a-b39d-47239366d493",
+            "name": "DeepSeek Analyser et Scorer Prospect",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                224,
+                9456
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const response = $input.first().json;\nconst content = response.choices[0].message.content;\n\nlet scoring;\ntry {\n  const clean = content.replace(/```json|```/g, '').trim();\n  scoring = JSON.parse(clean);\n} catch(e) {\n  // Fallback si JSON invalide\n  scoring = {\n    score: 3,\n    justification_score: 'Erreur analyse DeepSeek',\n    resume_profil: 'Analyse indisponible',\n    points_forts: [],\n    points_faibles: ['Analyse échouée'],\n    niveau_interet: 'froid',\n    email_valide: false,\n    a_contacter: false,\n    nom_enrichi: '',\n    description_enrichie: ''\n  };\n}\n\n// Récupérer les données du prospect depuis la boucle\nconst prospect = $('Split Boucle Prospects').first().json;\n\nreturn [{\n  json: {\n    // Données originales\n    prospect_id: prospect.id,\n    chat_id: prospect.chat_id,\n    session_id: prospect.session_id,\n    type: prospect.type,\n    nom: scoring.nom_enrichi || prospect.nom,\n    email: prospect.email,\n    telephone: prospect.telephone,\n    site_web: prospect.site_web,\n    linkedin_url: prospect.linkedin_url,\n    localisation: prospect.localisation,\n    secteur: prospect.secteur,\n    // Données enrichies par DeepSeek\n    score_pertinence: scoring.score || 0,\n    justification_score: scoring.justification_score || '',\n    resume_profil: scoring.resume_profil || '',\n    points_forts: scoring.points_forts || [],\n    points_faibles: scoring.points_faibles || [],\n    niveau_interet: scoring.niveau_interet || 'froid',\n    email_valide: scoring.email_valide || false,\n    a_contacter: scoring.a_contacter || false,\n    description_enrichie: scoring.description_enrichie || prospect.description || ''\n  }\n}];"
+            },
+            "id": "7277427d-2c3c-4e83-88ea-4c7e47da4a79",
+            "name": "Extraire Scoring DeepSeek",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                480,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET score_pertinence = $1, description = $2, nom = $3, statut = $4 WHERE id = $5",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [$json.score_pertinence, $json.description_enrichie, $json.nom, ($json.a_contacter ? 'a_contacter' : 'score_faible'), $json.prospect_id].join(',') }}"
+                }
+            },
+            "id": "08a2f902-cd95-4896-9e77-8ff6b0e7cd86",
+            "name": "PostgreSQL Mettre a Jour Scoring",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                720,
+                9456
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "conditions": [
+                        {
+                            "id": "cond-score",
+                            "leftValue": "={{ $('Extraire Scoring DeepSeek').first().json.score_pertinence }}",
+                            "rightValue": 4,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gte"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "6084d5ce-136f-4778-a8e1-6ea38f7e61e4",
+            "name": "IF Score Suffisant pour Afficher",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                976,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "={{ \n  const p = $('Extraire Scoring DeepSeek').first().json;\n  const scoreEmoji = p.score_pertinence >= 8 ? '🔥' : p.score_pertinence >= 6 ? '✅' : '🟡';\n  const typeEmoji = p.type === 'entreprise' ? '🏢' : p.type === 'freelance' ? '💼' : '👤';\n  const interetEmoji = p.niveau_interet === 'chaud' ? '🔥' : p.niveau_interet === 'tiède' ? '🟡' : '❄️';\n  \n  let msg = scoreEmoji + ' *Prospect — Score : ' + p.score_pertinence + '/10*\\n';\n  msg += typeEmoji + ' Type : `' + p.type + '` | ' + interetEmoji + ' Intérêt : `' + p.niveau_interet + '`\\n\\n';\n  msg += '📛 *Nom :* ' + (p.nom || 'Inconnu') + '\\n';\n  if (p.email) msg += '📧 *Email :* ' + p.email + (p.email_valide ? ' ✅' : ' ⚠️') + '\\n';\n  if (p.telephone) msg += '📞 *Tél :* ' + p.telephone + '\\n';\n  if (p.linkedin_url) msg += '🔗 *LinkedIn :* ' + p.linkedin_url + '\\n';\n  if (p.site_web) msg += '🌐 *Site :* ' + p.site_web + '\\n';\n  if (p.localisation) msg += '📍 *Localisation :* ' + p.localisation + '\\n';\n  msg += '\\n📝 *Résumé :*\\n' + (p.resume_profil || 'Non disponible') + '\\n';\n  if (p.points_forts && p.points_forts.length > 0) {\n    msg += '\\n✅ *Points forts :* ' + p.points_forts.join(' · ') + '\\n';\n  }\n  msg += '\\n💬 _' + (p.justification_score || '') + '_';\n  return msg;\n}}",
+                "additionalFields": {
+                    "disable_notification": false,
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "3388bae6-658d-4425-8f37-dd41bf7ea578",
+            "name": "Telegram Envoyer Fiche Prospect",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                1216,
+                9344
+            ],
+            "webhookId": "6408f1f9-87d7-4daf-a214-e7cae20afd11",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "1e7efcfe-5f93-4955-9f11-c3e6a94a6639",
+            "name": "Score Trop Faible Ignorer",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1216,
+                9600
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "passThrough",
+                "options": {}
+            },
+            "id": "3ffeb263-0c50-444e-87cf-8c63b3d20a3a",
+            "name": "Merge Apres Fiche",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2.1,
+            "position": [
+                1472,
+                9456
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "=📊 *Analyse complète !*\n\nTous les prospects de cette session ont été scorés.\n\n🔥 *Score ≥ 8 :* Prospects chauds — contact immédiat recommandé\n✅ *Score 6-7 :* Bons prospects — à contacter\n🟡 *Score 4-5 :* Prospects tièdes — à surveiller\n\n_Les prospects avec score ≥ 6 sont marqués `a_contacter` en base._\n_WF-3 (envoi emails) se déclenchera automatiquement pour eux._",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "27232c57-ee4f-4f60-b3a0-76bfe99d7a1c",
+            "name": "Telegram Bilan Final Analyse",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                224,
+                9664
+            ],
+            "webhookId": "bddb7d61-3ac1-4dc5-9682-fc0fc37d6098",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Execute Workflow Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Charger Prospects Session",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Charger Prospects Session": {
+            "main": [
+                [
+                    {
+                        "node": "IF Des Prospects a Analyser",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Des Prospects a Analyser": {
+            "main": [
+                [
+                    {
+                        "node": "Split Boucle Prospects",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Telegram Aucun Prospect",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Boucle Prospects": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Analyser et Scorer Prospect",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Telegram Bilan Final Analyse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Analyser et Scorer Prospect": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Scoring DeepSeek",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Scoring DeepSeek": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Mettre a Jour Scoring",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Mettre a Jour Scoring": {
+            "main": [
+                [
+                    {
+                        "node": "IF Score Suffisant pour Afficher",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Score Suffisant pour Afficher": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Envoyer Fiche Prospect",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Score Trop Faible Ignorer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Envoyer Fiche Prospect": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Apres Fiche",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Score Trop Faible Ignorer": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Apres Fiche",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Merge Apres Fiche": {
+            "main": [
+                [
+                    {
+                        "node": "Split Boucle Prospects",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+    }
+}

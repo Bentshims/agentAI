@@ -1,0 +1,273 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "updates": [
+                    "message"
+                ],
+                "additionalFields": {}
+            },
+            "id": "ff30fbee-bbfc-44c3-93dc-2c9595ebf0af",
+            "name": "Telegram Trigger Central",
+            "type": "n8n-nodes-base.telegramTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                -2496,
+                2576
+            ],
+            "webhookId": "059a03b9-cc29-4c41-be3a-73742f46245a",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst texte = message.text || '';\nconst chat_id = String(message.chat?.id || '');\nconst from = message.from || {};\n\n// Ignorer les messages vides ou trop courts\nif (!texte || texte.length < 2) {\n  return [];\n}\n\nreturn [{\n  json: {\n    texte: texte,\n    chat_id: chat_id,\n    prenom: from.first_name || '',\n    message_id: message.message_id || null\n  }\n}];"
+            },
+            "id": "16c0ab3a-d155-450b-a310-a689d4157384",
+            "name": "Extraire Message Telegram",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -2256,
+                2576
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"parameters\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.texte }}\"\n    }\n  ]\n}",
+                "options": {}
+            },
+            "id": "f5eed2e6-3081-4ff7-9f84-329c545e7143",
+            "name": "DeepSeek Classifier Intention",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -2000,
+                2576
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const response = $input.first().json;\nconst content = (response.choices[0].message.content || '').trim();\nconst messageData = $('Extraire Message Telegram').first().json;\n\n// Parser l'index — DeepSeek doit retourner 0, 1 ou 2\nlet index = parseInt(content, 10);\nif (isNaN(index) || index < 0 || index > 2) {\n  index = 2; // Fallback sur aide\n}\n\nreturn [{\n  json: {\n    intention_index: index,\n    texte: messageData.texte,\n    chat_id: messageData.chat_id,\n    prenom: messageData.prenom\n  }\n}];"
+            },
+            "id": "efe4d039-3bea-4e3c-9e64-64cf1901c676",
+            "name": "Extraire Index Intention",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -1744,
+                2576
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "expression",
+                "numberOutputs": 3,
+                "output": "={{ $json.intention_index }}"
+            },
+            "id": "989e7c9e-4071-4f26-8732-64e9a8a2bcff",
+            "name": "Switch Router Intentions",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3,
+            "position": [
+                -1504,
+                2576
+            ]
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "ILAeR1GEzROQFuPg",
+                    "mode": "id",
+                    "cachedResultUrl": "/workflow/ILAeR1GEzROQFuPg"
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "id": "47f4592d-55de-479f-b962-3bbdf022e8c5",
+            "name": "Lancer WF-1 Recherche",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.1,
+            "position": [
+                -1248,
+                2368
+            ]
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "wVqCeX4yfhPtPqRS",
+                    "mode": "id",
+                    "cachedResultUrl": "/workflow/wVqCeX4yfhPtPqRS"
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "id": "c0c9f7f8-4192-4972-8ebd-7d7a333bfe5d",
+            "name": "Lancer WF-4 Appel",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.1,
+            "position": [
+                -1248,
+                2576
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"parameters\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Fais-moi une réponse d’aide pour ce message : {{$json.texte}}\"\n    }\n  ]\n}",
+                "options": {}
+            },
+            "id": "9370d7f0-7f1f-4aeb-aed3-37be3f5de6fc",
+            "name": "DeepSeek Generer Aide",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -1248,
+                2768
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "={{ $json.choices[0].message.content }}",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "bcfcaefb-9bdb-431d-8a59-89b9a4b03245",
+            "name": "Telegram Repondre Aide",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                -992,
+                2768
+            ],
+            "webhookId": "f9be8593-5ef3-40a7-a929-5d61366e22d3",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Telegram Trigger Central": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Message Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Message Telegram": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Classifier Intention",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Classifier Intention": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Index Intention",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Index Intention": {
+            "main": [
+                [
+                    {
+                        "node": "Switch Router Intentions",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Switch Router Intentions": {
+            "main": [
+                [
+                    {
+                        "node": "Lancer WF-1 Recherche",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Lancer WF-4 Appel",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "DeepSeek Generer Aide",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Generer Aide": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Repondre Aide",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+    }
+}
