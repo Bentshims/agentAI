@@ -1,4 +1,4 @@
-{
+﻿{
     "nodes": [
         {
             "parameters": {
@@ -109,7 +109,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json || {};\nconst gmailData = $(\u0027Gmail Trigger Reponses\u0027).first().json || {};\n\nlet analyse;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  analyse = JSON.parse(clean);\n} catch (e) {\n  analyse = {};\n}\n\nconst normalizeText = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst normalizeAction = (value) =\u003e Number.isInteger(value) ? value : Number.parseInt(value, 10);\nconst actionIndexRaw = normalizeAction(analyse.action_index);\nconst actionIndex = [0, 1, 2, 3].includes(actionIndexRaw) ? actionIndexRaw : 3;\n\nreturn [{\n  json: {\n    ...prospect,\n    intention: normalizeText(analyse.intention, \u0027question\u0027),\n    niveau_interet: [\u0027chaud\u0027, \u0027tiede\u0027, \u0027froid\u0027].includes(analyse.niveau_interet) ? analyse.niveau_interet : \u0027tiede\u0027,\n    resume: normalizeText(analyse.resume, \u0027Analyse indisponible\u0027),\n    propose_creneau: Boolean(analyse.propose_creneau),\n    creneau_brut: normalizeText(analyse.creneau_brut, \u0027\u0027),\n    action_index: actionIndex,\n    gmail_message_id: gmailData.id || \u0027\u0027,\n    gmail_thread_id: gmailData.threadId || \u0027\u0027,\n    corps_reponse: normalizeText((gmailData.text || gmailData.snippet || \u0027\u0027).substring(0, 1000), \u0027\u0027),\n    objet_reponse: normalizeText(gmailData.subject, \u0027\u0027)\n  }\n}];"
+                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json || {};\nconst gmailData = $(\u0027Gmail Trigger Reponses\u0027).first().json || {};\n\nlet analyse;\nlet analyse_source = \u0027deepseek\u0027;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  analyse = JSON.parse(clean);\n} catch (e) {\n  analyse = {};\n  analyse_source = \u0027fallback\u0027;\n}\n\nconst normalizeText = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst normalizeAction = (value) =\u003e Number.isInteger(value) ? value : Number.parseInt(value, 10);\nconst actionIndexRaw = normalizeAction(analyse.action_index);\nconst actionIndex = [0, 1, 2, 3].includes(actionIndexRaw) ? actionIndexRaw : 3;\n\nreturn [{\n  json: {\n    ...prospect,\n    intention: normalizeText(analyse.intention, \u0027question\u0027),\n    niveau_interet: [\u0027chaud\u0027, \u0027tiede\u0027, \u0027froid\u0027].includes(analyse.niveau_interet) ? analyse.niveau_interet : \u0027tiede\u0027,\n    resume: normalizeText(analyse.resume, \u0027Analyse indisponible\u0027),\n    propose_creneau: Boolean(analyse.propose_creneau),\n    creneau_brut: normalizeText(analyse.creneau_brut, \u0027\u0027),\n    action_index: actionIndex,\n    analyse_source,\n    gmail_message_id: gmailData.id || \u0027\u0027,\n    gmail_thread_id: gmailData.threadId || \u0027\u0027,\n    corps_reponse: normalizeText((gmailData.text || gmailData.snippet || \u0027\u0027).substring(0, 1000), \u0027\u0027),\n    objet_reponse: normalizeText(gmailData.subject, \u0027\u0027)\n  }\n}];"
             },
             "id": "032f458d-8ee5-4e68-8e61-4a2697d6daf5",
             "name": "Extraire Intention Reponse",
@@ -189,7 +189,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ *Prospect intÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â CrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s !*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ {{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Score : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ _{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Proposition de crÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e automatiquement.",
+                "text": "=*Prospect interesse - creneaux envoyes*\n\n*{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\n{{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nScore : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\nSource analyse : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.analyse_source }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nProposition de creneaux envoyee automatiquement.",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -200,9 +200,9 @@
             "typeVersion": 1.2,
             "position": [
                 512,
-                0
+                512
             ],
-            "webhookId": "b97fbd4e-5ede-49c4-9bd5-48a98133644b",
+            "webhookId": "533447bf-d4a4-41f0-abb9-a1c7619ec9b0",
             "credentials": {
                 "telegramApi": {
                     "id": "zqN4TcHqzsYwQR24",
@@ -216,7 +216,7 @@
                 "query": "UPDATE prospects SET statut = \u0027interesse\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
                 "options": {
                     "queryBatching": "independently",
-                    "queryReplacement": "={{ [(\u0027 | Reponse positive le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Interet: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet || \u0027tiede\u0027) + \u0027 | Resume: \u0027 + (($(\u0027Extraire Intention Reponse\u0027).first().json.resume || \u0027\u0027).slice(0, 300))), $(\u0027Extraire Intention Reponse\u0027).first().json.id] }}"
+                    "queryReplacement": "={{ [(\u0027 | Reponse positive le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Interet: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet || \u0027tiede\u0027) + \u0027 | Source analyse: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.analyse_source || \u0027fallback\u0027) + \u0027 | Resume: \u0027 + (($(\u0027Extraire Intention Reponse\u0027).first().json.resume || \u0027\u0027).slice(0, 300))), $(\u0027Extraire Intention Reponse\u0027).first().json.id] }}"
                 }
             },
             "id": "66b4c429-57f6-4ed9-8fed-55e37494e8a8",
@@ -261,7 +261,7 @@
         {
             "parameters": {
                 "chatId": "7993226930",
-                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂºÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â *DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sabonnement ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©quence stoppÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $json.nom }}* ({{ $json.email }})\n\n_MarquÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sabonnÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© en base. Aucune relance ne lui sera envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e._",
+                "text": "=*Desabonnement detecte - sequence stoppee*\n\n*{{ $json.nom }}* ({{ $json.email }})\n\n_Marque comme desabonne en base. Aucune relance ne lui sera envoyee._",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -361,7 +361,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ *RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ponse automatique envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ Intention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  IntÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªt : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
+                "text": "=*Reponse automatique envoyee*\n\n*{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nIntention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nInteret : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\nSource analyse : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.analyse_source }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -405,7 +405,7 @@
         {
             "parameters": {
                 "operation": "executeQuery",
-                "query": "SELECT p.id, p.nom, p.email, p.type, p.secteur, p.localisation, p.score_pertinence, p.description, p.statut, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps, e.date_envoi as date_dernier_email FROM prospects p LEFT JOIN LATERAL (SELECT objet, corps, date_envoi FROM emails_log WHERE prospect_id = p.id ORDER BY date_envoi DESC LIMIT 1) e ON true WHERE p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027) AND p.email IS NOT NULL AND e.date_envoi \u003c NOW() - INTERVAL \u00273 days\u0027 AND e.date_envoi \u003e NOW() - INTERVAL \u002721 days\u0027 ORDER BY p.score_pertinence DESC, e.date_envoi ASC",
+                "query": "SELECT p.id, p.nom, p.email, p.type, p.secteur, p.localisation, p.score_pertinence, p.description, p.statut, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps, e.date_envoi as date_dernier_email FROM prospects p LEFT JOIN LATERAL (SELECT objet, corps, date_envoi FROM emails_log WHERE prospect_id = p.id ORDER BY date_envoi DESC LIMIT 1) e ON true WHERE p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027) AND p.score_pertinence \u003e= 6 AND p.email IS NOT NULL AND e.date_envoi \u003c NOW() - INTERVAL \u00273 days\u0027 AND e.date_envoi \u003e NOW() - INTERVAL \u002721 days\u0027 ORDER BY p.score_pertinence DESC, e.date_envoi ASC LIMIT 20",
                 "options": {}
             },
             "id": "f1ff2ad1-5488-40ca-8745-575d9a6cb7ad",
@@ -470,7 +470,7 @@
         },
         {
             "parameters": {
-                "amount": "={{ Math.floor(Math.random() * 90) + 45 }}"
+                "amount": "={{ Math.floor(Math.random() * 31) + 30 }}"
             },
             "id": "7c16777f-5bb7-47ce-b73e-738b6f8a91d4",
             "name": "Wait Anti-Spam Relance",
@@ -510,7 +510,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Relances\u0027).first().json || {};\n\nlet emailData;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst prochainStatut = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2\u0027;\nconst typeEmail = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2_breakup\u0027;\n\nlet objet = normalize(emailData.objet, prospect.statut === \u0027email_envoye\u0027 ? \u0027Petit suivi\u0027 : \u0027Je clos ce sujet\u0027);\nlet corps = normalize(emailData.corps, \u0027\u0027);\n\nif (!corps || corps.length \u003c 40) {\n  corps = prospect.statut === \u0027email_envoye\u0027\n    ? `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de revenir vers vous concernant mon precedent message. Si le sujet est pertinent pour vous, je peux vous faire un retour tres synthetique ou m\u0027adapter a votre contexte.\n\nDites-moi simplement si cela vaut la peine d\u0027en parler.\n\nBien cordialement`\n    : `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe vous laisse ce dernier message et je ne relancerai pas davantage. Si le sujet devient d\u0027actualite plus tard, je serai ravi d\u0027en reparler avec vous.\n\nBien cordialement`;\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    chat_id: prospect.chat_id || \u0027\u0027,\n    email_objet: objet,\n    email_corps: corps,\n    prochain_statut: prochainStatut,\n    type_email: typeEmail\n  }\n}];"
+                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Relances\u0027).first().json || {};\n\nlet emailData;\nlet generation_source = \u0027deepseek\u0027;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n  generation_source = \u0027fallback\u0027;\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst prochainStatut = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2\u0027;\nconst typeEmail = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2_breakup\u0027;\n\nlet objet = normalize(emailData.objet, prospect.statut === \u0027email_envoye\u0027 ? \u0027Petit suivi\u0027 : \u0027Je clos ce sujet\u0027);\nlet corps = normalize(emailData.corps, \u0027\u0027);\n\nif (!corps || corps.length \u003c 40) {\n  generation_source = \u0027fallback\u0027;\n  corps = prospect.statut === \u0027email_envoye\u0027\n    ? `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de revenir vers vous concernant mon precedent message. Si le sujet est pertinent pour vous, je peux vous faire un retour tres synthetique ou m\u0027adapter a votre contexte.\n\nDites-moi simplement si cela vaut la peine d\u0027en parler.\n\nBien cordialement`\n    : `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe vous laisse ce dernier message et je ne relancerai pas davantage. Si le sujet devient d\u0027actualite plus tard, je serai ravi d\u0027en reparler avec vous.\n\nBien cordialement`;\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    chat_id: prospect.chat_id || \u0027\u0027,\n    email_objet: objet,\n    email_corps: corps,\n    prochain_statut: prochainStatut,\n    type_email: typeEmail,\n    generation_source\n  }\n}];"
             },
             "id": "b979f96d-b5d8-46a0-8a7d-b6c223be0f95",
             "name": "Extraire Email Relance",
@@ -550,10 +550,10 @@
         {
             "parameters": {
                 "operation": "executeQuery",
-                "query": "UPDATE prospects SET statut = $1, date_contact = NOW() WHERE id = $2",
+                "query": "UPDATE prospects SET statut = $1, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $2 WHERE id = $3",
                 "options": {
                     "queryBatching": "independently",
-                    "queryReplacement": "={{ [$json.prochain_statut, $json.prospect_id] }}"
+                    "queryReplacement": "={{ [$json.prochain_statut, (\u0027 | \u0027 + $json.prochain_statut + \u0027 le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Source generation: \u0027 + ($json.generation_source || \u0027fallback\u0027)), $json.prospect_id] }}"
                 }
             },
             "id": "e07bdc39-1df7-4591-8104-382e1de21e04",
@@ -654,7 +654,7 @@
         {
             "parameters": {
                 "chatId": "7993226930",
-                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  *Rapport quotidien*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ En attente de rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ Prospects intÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.interesses }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ RDV planifiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ArchivÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
+                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  *Rapport quotidien*\n\nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ En attente de rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ Prospects intÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.interesses }}*\nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ RDV planifiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ArchivÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }

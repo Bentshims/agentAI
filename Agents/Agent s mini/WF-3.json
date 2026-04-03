@@ -14,7 +14,7 @@
         {
             "parameters": {
                 "operation": "executeQuery",
-                "query": "SELECT id, type, nom, email, telephone, site_web, linkedin_url, localisation, secteur, description, score_pertinence, session_id, chat_id FROM prospects WHERE statut = \u0027a_contacter\u0027 AND score_pertinence \u003e= 6 AND email IS NOT NULL AND email != \u0027\u0027 AND (date_contact IS NULL OR date_contact \u003c NOW() - INTERVAL \u002712 hours\u0027) ORDER BY score_pertinence DESC",
+                "query": "SELECT id, type, nom, email, telephone, site_web, linkedin_url, localisation, secteur, description, score_pertinence, session_id, chat_id FROM prospects WHERE statut = \u0027a_contacter\u0027 AND score_pertinence \u003e= 6 AND email IS NOT NULL AND email != \u0027\u0027 AND (date_contact IS NULL OR date_contact \u003c NOW() - INTERVAL \u002712 hours\u0027) ORDER BY score_pertinence DESC, id ASC LIMIT 20",
                 "options": {}
             },
             "id": "85386e06-11d5-4e27-9b68-2874e1ea5927",
@@ -100,7 +100,7 @@
         },
         {
             "parameters": {
-                "amount": "={{ Math.floor(Math.random() * 60) + 30 }}"
+                "amount": "={{ Math.floor(Math.random() * 26) + 20 }}"
             },
             "id": "a1f45a4f-3d03-4c39-ba0e-305b40ffb39e",
             "name": "Wait Anti-Spam 30-90s",
@@ -140,7 +140,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Emails\u0027).first().json || {};\n\nlet emailData;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\n\nlet objet = normalize(emailData.objet, `Suite a propos de ${prospect.nom || \u0027votre activite\u0027}`);\nlet corps = normalize(emailData.corps, \u0027\u0027);\nconst preview = normalize(emailData.preview_text, \u0027\u0027);\n\nif (!corps || corps.length \u003c 50) {\n  corps = `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de vous contacter car votre profil a retenu notre attention. Je pense qu\u0027il pourrait y avoir un vrai fit entre votre contexte actuel et ce que nous pouvons apporter de concret.\n\nSi vous le souhaitez, je peux vous envoyer un message plus cible ou vous proposer un court echange pour voir si cela a du sens.\n\nBien cordialement`.trim();\n}\n\nconst motsSpam = [\u0027offre\u0027, \u0027promo\u0027, \u0027urgent\u0027, \u0027gratuit\u0027, \u0027exclusif\u0027, \u0027solde\u0027, \u0027remise\u0027, \u0027deal\u0027, \u0027promotion\u0027, \u0027cadeau\u0027];\nif (motsSpam.some(mot =\u003e objet.toLowerCase().includes(mot))) {\n  objet = `Echange avec ${prospect.nom || \u0027vous\u0027}`.trim();\n}\n\nconst nbMots = objet.trim().split(/\\s+/).length;\nif (nbMots \u003e 7) {\n  objet = objet.trim().split(/\\s+/).slice(0, 5).join(\u0027 \u0027);\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    prospect_type: prospect.type,\n    chat_id: prospect.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: prospect.session_id,\n    score_pertinence: prospect.score_pertinence,\n    email_objet: objet,\n    email_corps: corps,\n    email_preview: preview,\n    genere_le: new Date().toISOString()\n  }\n}];"
+                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Emails\u0027).first().json || {};\n\nlet emailData;\nlet generation_source = \u0027deepseek\u0027;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n  generation_source = \u0027fallback\u0027;\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\n\nlet objet = normalize(emailData.objet, `Suite a propos de ${prospect.nom || \u0027votre activite\u0027}`);\nlet corps = normalize(emailData.corps, \u0027\u0027);\nconst preview = normalize(emailData.preview_text, \u0027\u0027);\n\nif (!corps || corps.length \u003c 50) {\n  corps = `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de vous contacter car votre profil a retenu notre attention. Je pense qu\u0027il pourrait y avoir un vrai fit entre votre contexte actuel et ce que nous pouvons apporter de concret.\n\nSi vous le souhaitez, je peux vous envoyer un message plus cible ou vous proposer un court echange pour voir si cela a du sens.\n\nBien cordialement`.trim();\n  generation_source = \u0027fallback\u0027;\n}\n\nconst motsSpam = [\u0027offre\u0027, \u0027promo\u0027, \u0027urgent\u0027, \u0027gratuit\u0027, \u0027exclusif\u0027, \u0027solde\u0027, \u0027remise\u0027, \u0027deal\u0027, \u0027promotion\u0027, \u0027cadeau\u0027];\nif (motsSpam.some(mot =\u003e objet.toLowerCase().includes(mot))) {\n  objet = `Echange avec ${prospect.nom || \u0027vous\u0027}`.trim();\n}\n\nconst nbMots = objet.trim().split(/\\s+/).length;\nif (nbMots \u003e 7) {\n  objet = objet.trim().split(/\\s+/).slice(0, 5).join(\u0027 \u0027);\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    prospect_type: prospect.type,\n    chat_id: prospect.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: prospect.session_id,\n    score_pertinence: prospect.score_pertinence,\n    email_objet: objet,\n    email_corps: corps,\n    email_preview: preview,\n    generation_source,\n    genere_le: new Date().toISOString()\n  }\n}];"
             },
             "id": "0218dd3c-1a8d-49c4-a521-cf7bb07738da",
             "name": "Extraire et Valider Email Genere",
@@ -183,7 +183,7 @@
                 "query": "UPDATE prospects SET statut = \u0027email_envoye\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
                 "options": {
                     "queryBatching": "independently",
-                    "queryReplacement": "={{ [\u0027Email envoye le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Objet: \u0027 + $json.email_objet, $json.prospect_id] }}"
+                    "queryReplacement": "={{ [\u0027Email envoye le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Source generation: \u0027 + ($json.generation_source || \u0027inconnue\u0027) + \u0027 | Objet: \u0027 + $json.email_objet, $json.prospect_id] }}"
                 }
             },
             "id": "87180120-f71a-4e52-9d5e-ac5b1ba6856c",
