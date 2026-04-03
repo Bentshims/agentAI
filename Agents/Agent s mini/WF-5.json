@@ -197,7 +197,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "=7993226930",
-                                         "text":  "=ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â¥ *Prospect intÃƒÆ’Ã‚Â©ressÃƒÆ’Ã‚Â© ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â CrÃƒÆ’Ã‚Â©neaux envoyÃƒÆ’Ã‚Â©s !*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â§ {{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nÃƒÂ¢Ã‚Â­Ã‚Â Score : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¬ _{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nÃƒÂ¢Ã…â€œÃ¢â‚¬Â°ÃƒÂ¯Ã‚Â¸Ã‚Â Proposition de crÃƒÆ’Ã‚Â©neaux envoyÃƒÆ’Ã‚Â©e automatiquement.",
+                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ *Prospect intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s !*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ {{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚Â­Ãƒâ€šÃ‚Â Score : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¬ _{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Proposition de crÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e automatiquement.",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
@@ -221,10 +221,10 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027interesse\u0027, notes = COALESCE(notes, \u0027\u0027) || \u0027 | RÃƒÆ’Ã‚Â©ponse positive le \u0027 || NOW()::date WHERE id = $1",
+                                         "query":  "UPDATE prospects SET statut = \u0027interesse\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
                                          "options":  {
                                                          "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ $(\u0027Extraire Intention Reponse\u0027).first().json.id }}"
+                                                         "queryReplacement":  "={{ [(\u0027 | Reponse positive le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Interet: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet || \u0027tiede\u0027) + \u0027 | Resume: \u0027 + (($(\u0027Extraire Intention Reponse\u0027).first().json.resume || \u0027\u0027).slice(0, 300))), $(\u0027Extraire Intention Reponse\u0027).first().json.id] }}"
                                                      }
                                      },
                       "id":  "66b4c429-57f6-4ed9-8fed-55e37494e8a8",
@@ -245,10 +245,10 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027desabonne\u0027, notes = COALESCE(notes, \u0027\u0027) || \u0027 | DÃƒÆ’Ã‚Â©sabonnement le \u0027 || NOW()::date WHERE id = $1",
+                                         "query":  "UPDATE prospects SET statut = \u0027desabonne\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
                                          "options":  {
                                                          "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ $json.id }}"
+                                                         "queryReplacement":  "={{ [(\u0027 | Desabonnement le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
                                                      }
                                      },
                       "id":  "c528747d-6e2f-4b33-ab96-a16cf48b915d",
@@ -269,7 +269,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "7993226930",
-                                         "text":  "=ÃƒÂ¢Ã¢â‚¬ÂºÃ¢â‚¬Â *DÃƒÆ’Ã‚Â©sabonnement ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SÃƒÆ’Ã‚Â©quence stoppÃƒÆ’Ã‚Â©e*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¤ *{{ $json.nom }}* ({{ $json.email }})\n\n_MarquÃƒÆ’Ã‚Â© dÃƒÆ’Ã‚Â©sabonnÃƒÆ’Ã‚Â© en base. Aucune relance ne lui sera envoyÃƒÆ’Ã‚Â©e._",
+                                         "text":  "=ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂºÃƒÂ¢Ã¢â€šÂ¬Ã‚Â *DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©sabonnement ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©quence stoppÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $json.nom }}* ({{ $json.email }})\n\n_MarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©sabonnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© en base. Aucune relance ne lui sera envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e._",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
@@ -293,10 +293,10 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027refus\u0027, notes = COALESCE(notes, \u0027\u0027) || \u0027 | Refus le \u0027 || NOW()::date WHERE id = $1",
+                                         "query":  "UPDATE prospects SET statut = \u0027refus\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
                                          "options":  {
                                                          "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ $json.id }}"
+                                                         "queryReplacement":  "={{ [(\u0027 | Refus le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
                                                      }
                                      },
                       "id":  "0ec87d49-f1c8-4cd0-b0ca-75597da2e482",
@@ -371,7 +371,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "=7993226930",
-                                         "text":  "=ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¬ *RÃƒÆ’Ã‚Â©ponse automatique envoyÃƒÆ’Ã‚Â©e*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Intention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  IntÃƒÆ’Ã‚Â©rÃƒÆ’Ã‚Âªt : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
+                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¬ *RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponse automatique envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ Intention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  IntÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªt : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
@@ -678,7 +678,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "7993226930",
-                                         "text":  "=ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  *Rapport quotidien*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â§ En attente de rÃƒÆ’Ã‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â¥ Prospects intÃƒÆ’Ã‚Â©ressÃƒÆ’Ã‚Â©s : *{{ $json.interesses }}*\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¦ RDV planifiÃƒÆ’Ã‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÂ¢Ã‚ÂÃ¢â‚¬Å¾ÃƒÂ¯Ã‚Â¸Ã‚Â ArchivÃƒÆ’Ã‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
+                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  *Rapport quotidien*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ En attente de rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ Prospects intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s : *{{ $json.interesses }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ RDV planifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â ArchivÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
