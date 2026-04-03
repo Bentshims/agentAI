@@ -1,1015 +1,989 @@
 {
-    "nodes":  [
-                  {
-                      "parameters":  {
-                                         "pollTimes":  {
-                                                           "item":  [
-                                                                        {
-                                                                            "mode":  "everyMinute"
-                                                                        }
-                                                                    ]
-                                                       },
-                                         "filters":  {
-                                                         "readStatus":  "unread"
-                                                     }
-                                     },
-                      "id":  "ad4cc4f5-eb44-4a63-80e0-210e0ba132c0",
-                      "name":  "Gmail Trigger Reponses",
-                      "type":  "n8n-nodes-base.gmailTrigger",
-                      "typeVersion":  1,
-                      "position":  [
-                                       -1504,
-                                       160
-                                   ],
-                      "credentials":  {
-                                          "gmailOAuth2":  {
-                                                              "id":  "828XrCCD0S4lNRT0",
-                                                              "name":  "Gmail account"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "SELECT p.id, p.nom, p.email, p.telephone, p.linkedin_url, p.secteur, p.score_pertinence, p.type, p.description, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps FROM prospects p LEFT JOIN emails_log e ON e.prospect_id = p.id WHERE LOWER(p.email) = LOWER(\u0027{{ $json.from }}\u0027) AND p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027, \u0027relance_2\u0027) ORDER BY e.date_envoi DESC LIMIT 1",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "038e31da-2bbe-44ab-94d4-f6c1c0d7a403",
-                      "name":  "PostgreSQL Identifier Prospect Repondant",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       -1248,
-                                       160
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  false,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "loose"
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "cond-known",
-                                                                                   "leftValue":  "={{ $input.all().length }}",
-                                                                                   "rightValue":  0,
-                                                                                   "operator":  {
-                                                                                                    "type":  "number",
-                                                                                                    "operation":  "gt"
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "3da4b622-ae77-49d0-97c2-e23678b3d52c",
-                      "name":  "IF Prospect Connu",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2,
-                      "position":  [
-                                       -1008,
-                                       160
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "method":  "POST",
-                                         "url":  "https://api.deepseek.com/chat/completions",
-                                         "authentication":  "genericCredentialType",
-                                         "genericAuthType":  "httpHeaderAuth",
-                                         "sendBody":  true,
-                                         "options":  {
-
-                                                     },
-                                         "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.1,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un analyste SDR charge de classifier la reponse d\u0027un prospect a un email de prospection. Tu dois produire STRICTEMENT un JSON valide avec les cles exactes: intention, niveau_interet, resume, propose_creneau, creneau_brut, action_index. Regles: intention est une courte etiquette parmi interesse, question, refus, desabonnement, demande_creneau, autre. niveau_interet est exactement chaud, tiede ou froid. resume fait 1 a 3 phrases courtes. propose_creneau est un booleen. creneau_brut contient le texte du creneau si present sinon null. action_index doit etre: 0 si le prospect est interesse ou demande des creneaux, 1 si le prospect veut se desabonner ou refuse tout contact, 2 si c\u0027est un refus commercial clair, 3 pour une question ou reponse generale necessitant une reponse. Si tu hesites, choisis 3.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json, email_recu: { from: $(\u0027Gmail Trigger Reponses\u0027).first().json.from || \u0027\u0027, subject: $(\u0027Gmail Trigger Reponses\u0027).first().json.subject || \u0027\u0027, text: $(\u0027Gmail Trigger Reponses\u0027).first().json.text || $(\u0027Gmail Trigger Reponses\u0027).first().json.snippet || \u0027\u0027 } }) }}\"\n    }\n  ]\n}"
-                                     },
-                      "id":  "99c62cc3-a7fc-4476-b264-8a17a21aa163",
-                      "name":  "DeepSeek Analyser Reponse",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       -752,
-                                       112
-                                   ],
-                      "credentials":  {
-                                          "httpHeaderAuth":  {
-                                                                 "id":  "Fi7piKShxfsxAA0V",
-                                                                 "name":  "Header Auth agent_s"
-                                                             }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json || {};\nconst gmailData = $(\u0027Gmail Trigger Reponses\u0027).first().json || {};\n\nlet analyse;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  analyse = JSON.parse(clean);\n} catch (e) {\n  analyse = {};\n}\n\nconst normalizeText = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst normalizeAction = (value) =\u003e Number.isInteger(value) ? value : Number.parseInt(value, 10);\nconst actionIndexRaw = normalizeAction(analyse.action_index);\nconst actionIndex = [0, 1, 2, 3].includes(actionIndexRaw) ? actionIndexRaw : 3;\n\nreturn [{\n  json: {\n    ...prospect,\n    intention: normalizeText(analyse.intention, \u0027question\u0027),\n    niveau_interet: [\u0027chaud\u0027, \u0027tiede\u0027, \u0027froid\u0027].includes(analyse.niveau_interet) ? analyse.niveau_interet : \u0027tiede\u0027,\n    resume: normalizeText(analyse.resume, \u0027Analyse indisponible\u0027),\n    propose_creneau: Boolean(analyse.propose_creneau),\n    creneau_brut: normalizeText(analyse.creneau_brut, \u0027\u0027),\n    action_index: actionIndex,\n    gmail_message_id: gmailData.id || \u0027\u0027,\n    gmail_thread_id: gmailData.threadId || \u0027\u0027,\n    corps_reponse: normalizeText((gmailData.text || gmailData.snippet || \u0027\u0027).substring(0, 1000), \u0027\u0027),\n    objet_reponse: normalizeText(gmailData.subject, \u0027\u0027)\n  }\n}];"
-                                     },
-                      "id":  "032f458d-8ee5-4e68-8e61-4a2697d6daf5",
-                      "name":  "Extraire Intention Reponse",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       -496,
-                                       112
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "mode":  "expression",
-                                         "output":  "={{ $json.action_index }}"
-                                     },
-                      "id":  "1b3e7d1b-9b76-44c1-a890-b58a95c600d2",
-                      "name":  "Switch Sur Action",
-                      "type":  "n8n-nodes-base.switch",
-                      "typeVersion":  3,
-                      "position":  [
-                                       -256,
-                                       112
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "method":  "POST",
-                                         "url":  "https://api.deepseek.com/chat/completions",
-                                         "authentication":  "genericCredentialType",
-                                         "genericAuthType":  "httpHeaderAuth",
-                                         "sendBody":  true,
-                                         "options":  {
-
-                                                     },
-                                         "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.35,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu rediges un email de reponse pour proposer des creneaux de rendez-vous a un prospect interesse. Redige uniquement le corps de l\u0027email en texte brut, sans JSON, sans markdown, sans signature automatique. Ton: professionnel, simple, confiant, humain. Le message doit remercier le prospect, confirmer l\u0027interet, proposer exactement 3 creneaux clairs et realistes dans un style facile a lire, puis demander lequel lui convient. Pas d\u0027emojis. Pas de jargon technique. Entre 70 et 140 mots.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Extraire Intention Reponse\u0027).first().json, date_reference: $now }) }}\"\n    }\n  ]\n}"
-                                     },
-                      "id":  "e9caca77-1c2c-418b-939f-283c32d0238d",
-                      "name":  "DeepSeek Proposer Creneaux",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       0,
-                                       0
-                                   ],
-                      "credentials":  {
-                                          "httpHeaderAuth":  {
-                                                                 "id":  "Fi7piKShxfsxAA0V",
-                                                                 "name":  "Header Auth agent_s"
-                                                             }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "sendTo":  "={{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}",
-                                         "subject":  "={{ \u0027Re: \u0027 + $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse }}",
-                                         "emailType":  "text",
-                                         "message":  "={{ $json.choices[0].message.content }}",
-                                         "options":  {
-                                                         "appendAttribution":  false
-                                                     }
-                                     },
-                      "id":  "af5dd70f-42b3-4096-a826-051c6b74fb3a",
-                      "name":  "Gmail Envoyer Proposition Creneaux",
-                      "type":  "n8n-nodes-base.gmail",
-                      "typeVersion":  2.1,
-                      "position":  [
-                                       256,
-                                       0
-                                   ],
-                      "webhookId":  "ae5dc060-2da0-4d1b-87f2-58e53eb1ba72",
-                      "credentials":  {
-                                          "gmailOAuth2":  {
-                                                              "id":  "828XrCCD0S4lNRT0",
-                                                              "name":  "Gmail account"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "chatId":  "=7993226930",
-                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ *Prospect intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s !*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ {{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚Â­Ãƒâ€šÃ‚Â Score : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¬ _{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Proposition de crÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e automatiquement.",
-                                         "additionalFields":  {
-                                                                  "parse_mode":  "Markdown"
-                                                              }
-                                     },
-                      "id":  "f3a53911-d432-43a8-99c2-7011825c2f34",
-                      "name":  "Telegram Notif Prospect Interesse",
-                      "type":  "n8n-nodes-base.telegram",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       512,
-                                       0
-                                   ],
-                      "webhookId":  "b97fbd4e-5ede-49c4-9bd5-48a98133644b",
-                      "credentials":  {
-                                          "telegramApi":  {
-                                                              "id":  "zqN4TcHqzsYwQR24",
-                                                              "name":  "Telegram agent_s"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027interesse\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
-                                         "options":  {
-                                                         "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ [(\u0027 | Reponse positive le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Interet: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet || \u0027tiede\u0027) + \u0027 | Resume: \u0027 + (($(\u0027Extraire Intention Reponse\u0027).first().json.resume || \u0027\u0027).slice(0, 300))), $(\u0027Extraire Intention Reponse\u0027).first().json.id] }}"
-                                                     }
-                                     },
-                      "id":  "66b4c429-57f6-4ed9-8fed-55e37494e8a8",
-                      "name":  "PostgreSQL MAJ Statut Interesse",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       752,
-                                       0
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027desabonne\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
-                                         "options":  {
-                                                         "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ [(\u0027 | Desabonnement le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
-                                                     }
-                                     },
-                      "id":  "c528747d-6e2f-4b33-ab96-a16cf48b915d",
-                      "name":  "PostgreSQL Marquer Desabonne",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       0,
-                                       208
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "chatId":  "7993226930",
-                                         "text":  "=ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂºÃƒÂ¢Ã¢â€šÂ¬Ã‚Â *DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©sabonnement ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©quence stoppÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $json.nom }}* ({{ $json.email }})\n\n_MarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©sabonnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© en base. Aucune relance ne lui sera envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e._",
-                                         "additionalFields":  {
-                                                                  "parse_mode":  "Markdown"
-                                                              }
-                                     },
-                      "id":  "096ca688-62f6-4ef2-8471-3c5c304c8e95",
-                      "name":  "Telegram Notif Desabonnement",
-                      "type":  "n8n-nodes-base.telegram",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       256,
-                                       208
-                                   ],
-                      "webhookId":  "7cc6a344-6fbf-4ca7-a1bb-d7ae09a210d3",
-                      "credentials":  {
-                                          "telegramApi":  {
-                                                              "id":  "zqN4TcHqzsYwQR24",
-                                                              "name":  "Telegram agent_s"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027refus\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
-                                         "options":  {
-                                                         "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ [(\u0027 | Refus le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
-                                                     }
-                                     },
-                      "id":  "0ec87d49-f1c8-4cd0-b0ca-75597da2e482",
-                      "name":  "PostgreSQL Marquer Refus",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       0,
-                                       352
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "method":  "POST",
-                                         "url":  "https://api.deepseek.com/chat/completions",
-                                         "authentication":  "genericCredentialType",
-                                         "genericAuthType":  "httpHeaderAuth",
-                                         "sendBody":  true,
-                                         "options":  {
-
-                                                     },
-                                         "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.35,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu rediges une reponse email professionnelle a un prospect. Redige uniquement le corps du message en texte brut, sans JSON, sans markdown, sans balises HTML. Reponds a sa question ou a son message avec clarte, politesse et concision. Si l\u0027information manque, propose une suite simple ou invite a un echange court. Ne promets rien que tu ne sais pas. Garde un ton commercial sobre. Longueur cible: 60 a 160 mots.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Extraire Intention Reponse\u0027).first().json, reponse_recue: $(\u0027Extraire Intention Reponse\u0027).first().json.corps_reponse || \u0027\u0027, objet: $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse || \u0027\u0027 }) }}\"\n    }\n  ]\n}"
-                                     },
-                      "id":  "7457e4a9-bf27-4287-b787-179b6b0d252b",
-                      "name":  "DeepSeek Repondre Message",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       0,
-                                       512
-                                   ],
-                      "credentials":  {
-                                          "httpHeaderAuth":  {
-                                                                 "id":  "Fi7piKShxfsxAA0V",
-                                                                 "name":  "Header Auth agent_s"
-                                                             }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "sendTo":  "={{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}",
-                                         "subject":  "={{ \u0027Re: \u0027 + $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse }}",
-                                         "emailType":  "text",
-                                         "message":  "={{ $json.choices[0].message.content }}",
-                                         "options":  {
-                                                         "appendAttribution":  false
-                                                     }
-                                     },
-                      "id":  "b82fb4c1-e5f4-4b10-869e-c9a7c3242a15",
-                      "name":  "Gmail Repondre Au Prospect",
-                      "type":  "n8n-nodes-base.gmail",
-                      "typeVersion":  2.1,
-                      "position":  [
-                                       256,
-                                       512
-                                   ],
-                      "webhookId":  "44f767b7-7606-41a4-8628-0766434cc126",
-                      "credentials":  {
-                                          "gmailOAuth2":  {
-                                                              "id":  "828XrCCD0S4lNRT0",
-                                                              "name":  "Gmail account"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "chatId":  "=7993226930",
-                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¬ *RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponse automatique envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ Intention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  IntÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªt : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
-                                         "additionalFields":  {
-                                                                  "parse_mode":  "Markdown"
-                                                              }
-                                     },
-                      "id":  "2b94bd6b-f4b2-4264-952d-da479ad63ae5",
-                      "name":  "Telegram Notif Reponse Envoyee",
-                      "type":  "n8n-nodes-base.telegram",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       512,
-                                       512
-                                   ],
-                      "webhookId":  "533447bf-d4a4-41f0-abb9-a1c7619ec9b0",
-                      "credentials":  {
-                                          "telegramApi":  {
-                                                              "id":  "zqN4TcHqzsYwQR24",
-                                                              "name":  "Telegram agent_s"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "rule":  {
-                                                      "interval":  [
-                                                                       {
-                                                                           "field":  "cronExpression",
-                                                                           "expression":  "0 8 * * 2,3,4"
-                                                                       }
-                                                                   ]
-                                                  }
-                                     },
-                      "id":  "577ce92c-5c20-46b4-8527-f71de18721f9",
-                      "name":  "Schedule Relances Mardi Mercredi Jeudi 8h",
-                      "type":  "n8n-nodes-base.scheduleTrigger",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       -1504,
-                                       752
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "SELECT p.id, p.nom, p.email, p.type, p.secteur, p.localisation, p.score_pertinence, p.description, p.statut, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps, e.date_envoi as date_dernier_email FROM prospects p LEFT JOIN LATERAL (SELECT objet, corps, date_envoi FROM emails_log WHERE prospect_id = p.id ORDER BY date_envoi DESC LIMIT 1) e ON true WHERE p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027) AND p.email IS NOT NULL AND e.date_envoi \u003c NOW() - INTERVAL \u00273 days\u0027 AND e.date_envoi \u003e NOW() - INTERVAL \u002721 days\u0027 ORDER BY p.score_pertinence DESC, e.date_envoi ASC",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "f1ff2ad1-5488-40ca-8745-575d9a6cb7ad",
-                      "name":  "PostgreSQL Charger A Relancer",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       -1248,
-                                       752
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  false,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "loose"
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "cond-relance",
-                                                                                   "leftValue":  "={{ $input.all().length }}",
-                                                                                   "rightValue":  0,
-                                                                                   "operator":  {
-                                                                                                    "type":  "number",
-                                                                                                    "operation":  "gt"
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "b3fabcdb-298a-43e6-aa2f-3fc1c958d183",
-                      "name":  "IF Des Prospects A Relancer",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2,
-                      "position":  [
-                                       -1008,
-                                       752
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "f8cf0d22-519f-44da-beff-6e97702df44a",
-                      "name":  "Split Boucle Relances",
-                      "type":  "n8n-nodes-base.splitInBatches",
-                      "typeVersion":  3,
-                      "position":  [
-                                       -752,
-                                       752
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "amount":  "={{ Math.floor(Math.random() * 90) + 45 }}"
-                                     },
-                      "id":  "7c16777f-5bb7-47ce-b73e-738b6f8a91d4",
-                      "name":  "Wait Anti-Spam Relance",
-                      "type":  "n8n-nodes-base.wait",
-                      "typeVersion":  1.1,
-                      "position":  [
-                                       -496,
-                                       752
-                                   ],
-                      "webhookId":  "1523d98d-fe10-4e70-b7ec-ef0c6d242fd2"
-                  },
-                  {
-                      "parameters":  {
-                                         "method":  "POST",
-                                         "url":  "https://api.deepseek.com/chat/completions",
-                                         "authentication":  "genericCredentialType",
-                                         "genericAuthType":  "httpHeaderAuth",
-                                         "sendBody":  true,
-                                         "options":  {
-
-                                                     },
-                                         "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.4,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un copywriter senior en relance commerciale. Tu dois produire STRICTEMENT un JSON valide avec les cles exactes: objet, corps. Le message doit etre utile, courtois, non aggressif et tres humain. Si c\u0027est une premiere relance, rappelle sobrement le precedent message et reformule la valeur en une phrase. Si c\u0027est une deuxieme relance, adopte un ton de break-up email poli et ferme, sans culpabiliser le prospect. Pas de markdown, pas d\u0027emojis, pas de ton marketing agressif. Objet: 3 a 7 mots. Corps: 70 a 150 mots. Un seul CTA simple.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Split Boucle Relances\u0027).first().json, type_relance: $(\u0027Split Boucle Relances\u0027).first().json.statut === \u0027email_envoye\u0027 ? \u0027premiere_relance\u0027 : \u0027deuxieme_relance\u0027, dernier_email: { objet: $(\u0027Split Boucle Relances\u0027).first().json.dernier_objet || \u0027\u0027, corps: $(\u0027Split Boucle Relances\u0027).first().json.dernier_corps || \u0027\u0027 } }) }}\"\n    }\n  ]\n}"
-                                     },
-                      "id":  "2e728b97-cd1a-4ab3-afa1-581b7aef2dc5",
-                      "name":  "DeepSeek Generer Email Relance",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       -256,
-                                       752
-                                   ],
-                      "credentials":  {
-                                          "httpHeaderAuth":  {
-                                                                 "id":  "Fi7piKShxfsxAA0V",
-                                                                 "name":  "Header Auth agent_s"
-                                                             }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Relances\u0027).first().json || {};\n\nlet emailData;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst prochainStatut = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2\u0027;\nconst typeEmail = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2_breakup\u0027;\n\nlet objet = normalize(emailData.objet, prospect.statut === \u0027email_envoye\u0027 ? \u0027Petit suivi\u0027 : \u0027Je clos ce sujet\u0027);\nlet corps = normalize(emailData.corps, \u0027\u0027);\n\nif (!corps || corps.length \u003c 40) {\n  corps = prospect.statut === \u0027email_envoye\u0027\n    ? `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de revenir vers vous concernant mon precedent message. Si le sujet est pertinent pour vous, je peux vous faire un retour tres synthetique ou m\u0027adapter a votre contexte.\n\nDites-moi simplement si cela vaut la peine d\u0027en parler.\n\nBien cordialement`\n    : `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe vous laisse ce dernier message et je ne relancerai pas davantage. Si le sujet devient d\u0027actualite plus tard, je serai ravi d\u0027en reparler avec vous.\n\nBien cordialement`;\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    chat_id: prospect.chat_id || \u0027\u0027,\n    email_objet: objet,\n    email_corps: corps,\n    prochain_statut: prochainStatut,\n    type_email: typeEmail\n  }\n}];"
-                                     },
-                      "id":  "b979f96d-b5d8-46a0-8a7d-b6c223be0f95",
-                      "name":  "Extraire Email Relance",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       0,
-                                       752
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "sendTo":  "={{ $json.prospect_email }}",
-                                         "subject":  "={{ $json.email_objet }}",
-                                         "emailType":  "text",
-                                         "message":  "={{ $json.email_corps }}",
-                                         "options":  {
-                                                         "appendAttribution":  false
-                                                     }
-                                     },
-                      "id":  "29c4af75-3427-4f68-8e55-0d533b5b2ff3",
-                      "name":  "Gmail Envoyer Relance",
-                      "type":  "n8n-nodes-base.gmail",
-                      "typeVersion":  2.1,
-                      "position":  [
-                                       256,
-                                       752
-                                   ],
-                      "webhookId":  "7fce4c43-2c21-431e-a22f-630d7ec3b1df",
-                      "credentials":  {
-                                          "gmailOAuth2":  {
-                                                              "id":  "828XrCCD0S4lNRT0",
-                                                              "name":  "Gmail account"
-                                                          }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = $1, date_contact = NOW() WHERE id = $2",
-                                         "options":  {
-                                                         "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ [$json.prochain_statut, $json.prospect_id] }}"
-                                                     }
-                                     },
-                      "id":  "e07bdc39-1df7-4591-8104-382e1de21e04",
-                      "name":  "PostgreSQL MAJ Statut Relance",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       512,
-                                       752
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "INSERT INTO emails_log (prospect_id, type_email, objet, corps, date_envoi, statut_envoi) VALUES ($1, $2, $3, $4, NOW(), \u0027envoye\u0027)",
-                                         "options":  {
-                                                         "queryBatching":  "independently",
-                                                         "queryReplacement":  "={{ [$json.prospect_id, $json.type_email, $json.email_objet, $json.email_corps] }}"
-                                                     }
-                                     },
-                      "id":  "f53794b5-a879-4d12-a93a-c00a5d5eba0e",
-                      "name":  "PostgreSQL Log Relance",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       752,
-                                       752
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "mode":  "passThrough",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "e5f18573-5414-4789-84aa-8957309b552d",
-                      "name":  "Merge Retour Boucle Relance",
-                      "type":  "n8n-nodes-base.merge",
-                      "typeVersion":  2.1,
-                      "position":  [
-                                       1008,
-                                       752
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "UPDATE prospects SET statut = \u0027abandonne\u0027 WHERE statut = \u0027relance_2\u0027 AND date_contact \u003c NOW() - INTERVAL \u002710 days\u0027",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "7dd0b45f-964d-4079-bd37-de352e0bfa45",
-                      "name":  "PostgreSQL Archiver Prospects Froids",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       -752,
-                                       960
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "SELECT COUNT(*) FILTER (WHERE statut = \u0027email_envoye\u0027) as en_attente, COUNT(*) FILTER (WHERE statut IN (\u0027relance_1\u0027,\u0027relance_2\u0027)) as en_relance, COUNT(*) FILTER (WHERE statut = \u0027interesse\u0027) as interesses, COUNT(*) FILTER (WHERE statut = \u0027appel_planifie\u0027) as rdv_planifies, COUNT(*) FILTER (WHERE statut = \u0027abandonne\u0027 AND date_contact \u003e= CURRENT_DATE - INTERVAL \u00271 day\u0027) as abandonnes_aujourd_hui FROM prospects",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "4db2eb3a-61f5-4118-9593-2433c7a785e9",
-                      "name":  "PostgreSQL Stats Quotidiennes",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.5,
-                      "position":  [
-                                       -496,
-                                       960
-                                   ],
-                      "credentials":  {
-                                          "postgres":  {
-                                                           "id":  "TRtaTGQNB10KiwWa",
-                                                           "name":  "Postgres agent_s"
-                                                       }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "chatId":  "7993226930",
-                                         "text":  "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â  *Rapport quotidien*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ En attente de rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ Prospects intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s : *{{ $json.interesses }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ RDV planifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â ArchivÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
-                                         "additionalFields":  {
-                                                                  "parse_mode":  "Markdown"
-                                                              }
-                                     },
-                      "id":  "a894c826-f8b3-4e65-b23d-c8b85f9752cb",
-                      "name":  "Telegram Rapport Quotidien",
-                      "type":  "n8n-nodes-base.telegram",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       -256,
-                                       960
-                                   ],
-                      "webhookId":  "b054db26-fe71-4035-bd42-cb6454f09f51",
-                      "credentials":  {
-                                          "telegramApi":  {
-                                                              "id":  "zqN4TcHqzsYwQR24",
-                                                              "name":  "Telegram agent_s"
-                                                          }
-                                      }
-                  }
-              ],
-    "connections":  {
-                        "Gmail Trigger Reponses":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "PostgreSQL Identifier Prospect Repondant",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "PostgreSQL Identifier Prospect Repondant":  {
-                                                                         "main":  [
-                                                                                      [
-                                                                                          {
-                                                                                              "node":  "IF Prospect Connu",
-                                                                                              "type":  "main",
-                                                                                              "index":  0
-                                                                                          }
-                                                                                      ]
-                                                                                  ]
-                                                                     },
-                        "IF Prospect Connu":  {
-                                                  "main":  [
-                                                               [
-                                                                   {
-                                                                       "node":  "DeepSeek Analyser Reponse",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ]
-                                                           ]
-                                              },
-                        "DeepSeek Analyser Reponse":  {
-                                                          "main":  [
-                                                                       [
-                                                                           {
-                                                                               "node":  "Extraire Intention Reponse",
-                                                                               "type":  "main",
-                                                                               "index":  0
-                                                                           }
-                                                                       ]
-                                                                   ]
-                                                      },
-                        "Extraire Intention Reponse":  {
-                                                           "main":  [
-                                                                        [
-                                                                            {
-                                                                                "node":  "Switch Sur Action",
-                                                                                "type":  "main",
-                                                                                "index":  0
-                                                                            }
-                                                                        ]
-                                                                    ]
-                                                       },
-                        "Switch Sur Action":  {
-                                                  "main":  [
-                                                               [
-                                                                   {
-                                                                       "node":  "DeepSeek Proposer Creneaux",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ],
-                                                               [
-                                                                   {
-                                                                       "node":  "PostgreSQL Marquer Desabonne",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ],
-                                                               [
-                                                                   {
-                                                                       "node":  "PostgreSQL Marquer Refus",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ],
-                                                               [
-                                                                   {
-                                                                       "node":  "DeepSeek Repondre Message",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ]
-                                                           ]
-                                              },
-                        "DeepSeek Proposer Creneaux":  {
-                                                           "main":  [
-                                                                        [
-                                                                            {
-                                                                                "node":  "Gmail Envoyer Proposition Creneaux",
-                                                                                "type":  "main",
-                                                                                "index":  0
-                                                                            }
-                                                                        ]
-                                                                    ]
-                                                       },
-                        "Gmail Envoyer Proposition Creneaux":  {
-                                                                   "main":  [
-                                                                                [
-                                                                                    {
-                                                                                        "node":  "Telegram Notif Prospect Interesse",
-                                                                                        "type":  "main",
-                                                                                        "index":  0
-                                                                                    }
-                                                                                ]
-                                                                            ]
-                                                               },
-                        "Telegram Notif Prospect Interesse":  {
-                                                                  "main":  [
-                                                                               [
-                                                                                   {
-                                                                                       "node":  "PostgreSQL MAJ Statut Interesse",
-                                                                                       "type":  "main",
-                                                                                       "index":  0
-                                                                                   }
-                                                                               ]
-                                                                           ]
-                                                              },
-                        "PostgreSQL Marquer Desabonne":  {
-                                                             "main":  [
-                                                                          [
-                                                                              {
-                                                                                  "node":  "Telegram Notif Desabonnement",
-                                                                                  "type":  "main",
-                                                                                  "index":  0
-                                                                              }
-                                                                          ]
-                                                                      ]
-                                                         },
-                        "DeepSeek Repondre Message":  {
-                                                          "main":  [
-                                                                       [
-                                                                           {
-                                                                               "node":  "Gmail Repondre Au Prospect",
-                                                                               "type":  "main",
-                                                                               "index":  0
-                                                                           }
-                                                                       ]
-                                                                   ]
-                                                      },
-                        "Gmail Repondre Au Prospect":  {
-                                                           "main":  [
-                                                                        [
-                                                                            {
-                                                                                "node":  "Telegram Notif Reponse Envoyee",
-                                                                                "type":  "main",
-                                                                                "index":  0
-                                                                            }
-                                                                        ]
-                                                                    ]
-                                                       },
-                        "Schedule Relances Mardi Mercredi Jeudi 8h":  {
-                                                                          "main":  [
-                                                                                       [
-                                                                                           {
-                                                                                               "node":  "PostgreSQL Charger A Relancer",
-                                                                                               "type":  "main",
-                                                                                               "index":  0
-                                                                                           }
-                                                                                       ]
-                                                                                   ]
-                                                                      },
-                        "PostgreSQL Charger A Relancer":  {
-                                                              "main":  [
-                                                                           [
-                                                                               {
-                                                                                   "node":  "IF Des Prospects A Relancer",
-                                                                                   "type":  "main",
-                                                                                   "index":  0
-                                                                               }
-                                                                           ]
-                                                                       ]
-                                                          },
-                        "IF Des Prospects A Relancer":  {
-                                                            "main":  [
-                                                                         [
-                                                                             {
-                                                                                 "node":  "Split Boucle Relances",
-                                                                                 "type":  "main",
-                                                                                 "index":  0
-                                                                             }
-                                                                         ],
-                                                                         [
-                                                                             {
-                                                                                 "node":  "PostgreSQL Archiver Prospects Froids",
-                                                                                 "type":  "main",
-                                                                                 "index":  0
-                                                                             }
-                                                                         ]
-                                                                     ]
-                                                        },
-                        "Split Boucle Relances":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Wait Anti-Spam Relance",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "Wait Anti-Spam Relance":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "DeepSeek Generer Email Relance",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "DeepSeek Generer Email Relance":  {
-                                                               "main":  [
-                                                                            [
-                                                                                {
-                                                                                    "node":  "Extraire Email Relance",
-                                                                                    "type":  "main",
-                                                                                    "index":  0
-                                                                                }
-                                                                            ]
-                                                                        ]
-                                                           },
-                        "Extraire Email Relance":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Gmail Envoyer Relance",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "Gmail Envoyer Relance":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "PostgreSQL MAJ Statut Relance",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "PostgreSQL MAJ Statut Relance":  {
-                                                              "main":  [
-                                                                           [
-                                                                               {
-                                                                                   "node":  "PostgreSQL Log Relance",
-                                                                                   "type":  "main",
-                                                                                   "index":  0
-                                                                               }
-                                                                           ]
-                                                                       ]
-                                                          },
-                        "PostgreSQL Log Relance":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Merge Retour Boucle Relance",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "Merge Retour Boucle Relance":  {
-                                                            "main":  [
-                                                                         [
-                                                                             {
-                                                                                 "node":  "Split Boucle Relances",
-                                                                                 "type":  "main",
-                                                                                 "index":  0
-                                                                             }
-                                                                         ]
-                                                                     ]
-                                                        },
-                        "PostgreSQL Archiver Prospects Froids":  {
-                                                                     "main":  [
-                                                                                  [
-                                                                                      {
-                                                                                          "node":  "PostgreSQL Stats Quotidiennes",
-                                                                                          "type":  "main",
-                                                                                          "index":  0
-                                                                                      }
-                                                                                  ]
-                                                                              ]
-                                                                 },
-                        "PostgreSQL Stats Quotidiennes":  {
-                                                              "main":  [
-                                                                           [
-                                                                               {
-                                                                                   "node":  "Telegram Rapport Quotidien",
-                                                                                   "type":  "main",
-                                                                                   "index":  0
-                                                                               }
-                                                                           ]
-                                                                       ]
-                                                          }
-                    },
-    "pinData":  {
-
+    "nodes": [
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
                 },
-    "meta":  {
-                 "templateCredsSetupCompleted":  true,
-                 "instanceId":  "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
-             }
+                "filters": {
+                    "readStatus": "unread"
+                }
+            },
+            "id": "ad4cc4f5-eb44-4a63-80e0-210e0ba132c0",
+            "name": "Gmail Trigger Reponses",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1,
+            "position": [
+                -1504,
+                160
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "828XrCCD0S4lNRT0",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT p.id, p.nom, p.email, p.telephone, p.linkedin_url, p.secteur, p.score_pertinence, p.type, p.description, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps FROM prospects p LEFT JOIN LATERAL (SELECT objet, corps, date_envoi FROM emails_log WHERE prospect_id = p.id ORDER BY date_envoi DESC LIMIT 1) e ON true WHERE LOWER(p.email) = LOWER(\u0027{{ $json.from }}\u0027) AND p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027, \u0027relance_2\u0027) ORDER BY e.date_envoi DESC NULLS LAST LIMIT 1",
+                "options": {}
+            },
+            "id": "038e31da-2bbe-44ab-94d4-f6c1c0d7a403",
+            "name": "PostgreSQL Identifier Prospect Repondant",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -1248,
+                160
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-known",
+                            "leftValue": "={{ $input.all().length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "3da4b622-ae77-49d0-97c2-e23678b3d52c",
+            "name": "IF Prospect Connu",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -1008,
+                160
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "options": {},
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.1,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un analyste SDR charge de classifier la reponse d\u0027un prospect a un email de prospection. Tu dois produire STRICTEMENT un JSON valide avec les cles exactes: intention, niveau_interet, resume, propose_creneau, creneau_brut, action_index. Regles: intention est une courte etiquette parmi interesse, question, refus, desabonnement, demande_creneau, autre. niveau_interet est exactement chaud, tiede ou froid. resume fait 1 a 3 phrases courtes. propose_creneau est un booleen. creneau_brut contient le texte du creneau si present sinon null. action_index doit etre: 0 si le prospect est interesse ou demande des creneaux, 1 si le prospect veut se desabonner ou refuse tout contact, 2 si c\u0027est un refus commercial clair, 3 pour une question ou reponse generale necessitant une reponse. Si tu hesites, choisis 3.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json, email_recu: { from: $(\u0027Gmail Trigger Reponses\u0027).first().json.from || \u0027\u0027, subject: $(\u0027Gmail Trigger Reponses\u0027).first().json.subject || \u0027\u0027, text: $(\u0027Gmail Trigger Reponses\u0027).first().json.text || $(\u0027Gmail Trigger Reponses\u0027).first().json.snippet || \u0027\u0027 } }) }}\"\n    }\n  ]\n}"
+            },
+            "id": "99c62cc3-a7fc-4476-b264-8a17a21aa163",
+            "name": "DeepSeek Analyser Reponse",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -752,
+                112
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027PostgreSQL Identifier Prospect Repondant\u0027).first().json || {};\nconst gmailData = $(\u0027Gmail Trigger Reponses\u0027).first().json || {};\n\nlet analyse;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  analyse = JSON.parse(clean);\n} catch (e) {\n  analyse = {};\n}\n\nconst normalizeText = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst normalizeAction = (value) =\u003e Number.isInteger(value) ? value : Number.parseInt(value, 10);\nconst actionIndexRaw = normalizeAction(analyse.action_index);\nconst actionIndex = [0, 1, 2, 3].includes(actionIndexRaw) ? actionIndexRaw : 3;\n\nreturn [{\n  json: {\n    ...prospect,\n    intention: normalizeText(analyse.intention, \u0027question\u0027),\n    niveau_interet: [\u0027chaud\u0027, \u0027tiede\u0027, \u0027froid\u0027].includes(analyse.niveau_interet) ? analyse.niveau_interet : \u0027tiede\u0027,\n    resume: normalizeText(analyse.resume, \u0027Analyse indisponible\u0027),\n    propose_creneau: Boolean(analyse.propose_creneau),\n    creneau_brut: normalizeText(analyse.creneau_brut, \u0027\u0027),\n    action_index: actionIndex,\n    gmail_message_id: gmailData.id || \u0027\u0027,\n    gmail_thread_id: gmailData.threadId || \u0027\u0027,\n    corps_reponse: normalizeText((gmailData.text || gmailData.snippet || \u0027\u0027).substring(0, 1000), \u0027\u0027),\n    objet_reponse: normalizeText(gmailData.subject, \u0027\u0027)\n  }\n}];"
+            },
+            "id": "032f458d-8ee5-4e68-8e61-4a2697d6daf5",
+            "name": "Extraire Intention Reponse",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -496,
+                112
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "expression",
+                "output": "={{ $json.action_index }}"
+            },
+            "id": "1b3e7d1b-9b76-44c1-a890-b58a95c600d2",
+            "name": "Switch Sur Action",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3,
+            "position": [
+                -256,
+                112
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "options": {},
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.35,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu rediges un email de reponse pour proposer des creneaux de rendez-vous a un prospect interesse. Redige uniquement le corps de l\u0027email en texte brut, sans JSON, sans markdown, sans signature automatique. Ton: professionnel, simple, confiant, humain. Le message doit remercier le prospect, confirmer l\u0027interet, proposer exactement 3 creneaux clairs et realistes dans un style facile a lire, puis demander lequel lui convient. Pas d\u0027emojis. Pas de jargon technique. Entre 70 et 140 mots.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Extraire Intention Reponse\u0027).first().json, date_reference: $now }) }}\"\n    }\n  ]\n}"
+            },
+            "id": "e9caca77-1c2c-418b-939f-283c32d0238d",
+            "name": "DeepSeek Proposer Creneaux",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                0,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}",
+                "subject": "={{ \u0027Re: \u0027 + $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse }}",
+                "emailType": "text",
+                "message": "={{ $json.choices[0].message.content }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "af5dd70f-42b3-4096-a826-051c6b74fb3a",
+            "name": "Gmail Envoyer Proposition Creneaux",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                256,
+                0
+            ],
+            "webhookId": "ae5dc060-2da0-4d1b-87f2-58e53eb1ba72",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "828XrCCD0S4lNRT0",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ *Prospect intÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â CrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s !*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ {{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Score : {{ $(\u0027Extraire Intention Reponse\u0027).first().json.score_pertinence }}/10\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ _{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Proposition de crÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©neaux envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e automatiquement.",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "f3a53911-d432-43a8-99c2-7011825c2f34",
+            "name": "Telegram Notif Prospect Interesse",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                512,
+                0
+            ],
+            "webhookId": "b97fbd4e-5ede-49c4-9bd5-48a98133644b",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET statut = \u0027interesse\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [(\u0027 | Reponse positive le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Interet: \u0027 + ($(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet || \u0027tiede\u0027) + \u0027 | Resume: \u0027 + (($(\u0027Extraire Intention Reponse\u0027).first().json.resume || \u0027\u0027).slice(0, 300))), $(\u0027Extraire Intention Reponse\u0027).first().json.id] }}"
+                }
+            },
+            "id": "66b4c429-57f6-4ed9-8fed-55e37494e8a8",
+            "name": "PostgreSQL MAJ Statut Interesse",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                752,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET statut = \u0027desabonne\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [(\u0027 | Desabonnement le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
+                }
+            },
+            "id": "c528747d-6e2f-4b33-ab96-a16cf48b915d",
+            "name": "PostgreSQL Marquer Desabonne",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                0,
+                208
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "7993226930",
+                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂºÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â *DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sabonnement ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©quence stoppÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $json.nom }}* ({{ $json.email }})\n\n_MarquÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sabonnÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© en base. Aucune relance ne lui sera envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e._",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "096ca688-62f6-4ef2-8471-3c5c304c8e95",
+            "name": "Telegram Notif Desabonnement",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                256,
+                208
+            ],
+            "webhookId": "7cc6a344-6fbf-4ca7-a1bb-d7ae09a210d3",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET statut = \u0027refus\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [(\u0027 | Refus le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027)), $json.id] }}"
+                }
+            },
+            "id": "0ec87d49-f1c8-4cd0-b0ca-75597da2e482",
+            "name": "PostgreSQL Marquer Refus",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                0,
+                352
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "options": {},
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.35,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu rediges une reponse email professionnelle a un prospect. Redige uniquement le corps du message en texte brut, sans JSON, sans markdown, sans balises HTML. Reponds a sa question ou a son message avec clarte, politesse et concision. Si l\u0027information manque, propose une suite simple ou invite a un echange court. Ne promets rien que tu ne sais pas. Garde un ton commercial sobre. Longueur cible: 60 a 160 mots.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Extraire Intention Reponse\u0027).first().json, reponse_recue: $(\u0027Extraire Intention Reponse\u0027).first().json.corps_reponse || \u0027\u0027, objet: $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse || \u0027\u0027 }) }}\"\n    }\n  ]\n}"
+            },
+            "id": "7457e4a9-bf27-4287-b787-179b6b0d252b",
+            "name": "DeepSeek Repondre Message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                0,
+                512
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $(\u0027Extraire Intention Reponse\u0027).first().json.email }}",
+                "subject": "={{ \u0027Re: \u0027 + $(\u0027Extraire Intention Reponse\u0027).first().json.objet_reponse }}",
+                "emailType": "text",
+                "message": "={{ $json.choices[0].message.content }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "b82fb4c1-e5f4-4b10-869e-c9a7c3242a15",
+            "name": "Gmail Repondre Au Prospect",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                256,
+                512
+            ],
+            "webhookId": "44f767b7-7606-41a4-8628-0766434cc126",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "828XrCCD0S4lNRT0",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "=7993226930",
+                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ *RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ponse automatique envoyÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ *{{ $(\u0027Extraire Intention Reponse\u0027).first().json.nom }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ Intention : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.intention }}`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  IntÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªt : `{{ $(\u0027Extraire Intention Reponse\u0027).first().json.niveau_interet }}`\n\n_{{ $(\u0027Extraire Intention Reponse\u0027).first().json.resume }}_",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "2b94bd6b-f4b2-4264-952d-da479ad63ae5",
+            "name": "Telegram Notif Reponse Envoyee",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                512,
+                512
+            ],
+            "webhookId": "533447bf-d4a4-41f0-abb9-a1c7619ec9b0",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 8 * * 2,3,4"
+                        }
+                    ]
+                }
+            },
+            "id": "577ce92c-5c20-46b4-8527-f71de18721f9",
+            "name": "Schedule Relances Mardi Mercredi Jeudi 8h",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -1504,
+                752
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT p.id, p.nom, p.email, p.type, p.secteur, p.localisation, p.score_pertinence, p.description, p.statut, p.chat_id, e.objet as dernier_objet, e.corps as dernier_corps, e.date_envoi as date_dernier_email FROM prospects p LEFT JOIN LATERAL (SELECT objet, corps, date_envoi FROM emails_log WHERE prospect_id = p.id ORDER BY date_envoi DESC LIMIT 1) e ON true WHERE p.statut IN (\u0027email_envoye\u0027, \u0027relance_1\u0027) AND p.email IS NOT NULL AND e.date_envoi \u003c NOW() - INTERVAL \u00273 days\u0027 AND e.date_envoi \u003e NOW() - INTERVAL \u002721 days\u0027 ORDER BY p.score_pertinence DESC, e.date_envoi ASC",
+                "options": {}
+            },
+            "id": "f1ff2ad1-5488-40ca-8745-575d9a6cb7ad",
+            "name": "PostgreSQL Charger A Relancer",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -1248,
+                752
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-relance",
+                            "leftValue": "={{ $input.all().length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "b3fabcdb-298a-43e6-aa2f-3fc1c958d183",
+            "name": "IF Des Prospects A Relancer",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -1008,
+                752
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "f8cf0d22-519f-44da-beff-6e97702df44a",
+            "name": "Split Boucle Relances",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                -752,
+                752
+            ]
+        },
+        {
+            "parameters": {
+                "amount": "={{ Math.floor(Math.random() * 90) + 45 }}"
+            },
+            "id": "7c16777f-5bb7-47ce-b73e-738b6f8a91d4",
+            "name": "Wait Anti-Spam Relance",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                -496,
+                752
+            ],
+            "webhookId": "1523d98d-fe10-4e70-b7ec-ef0c6d242fd2"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.deepseek.com/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "options": {},
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.4,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un copywriter senior en relance commerciale. Tu dois produire STRICTEMENT un JSON valide avec les cles exactes: objet, corps. Le message doit etre utile, courtois, non aggressif et tres humain. Si c\u0027est une premiere relance, rappelle sobrement le precedent message et reformule la valeur en une phrase. Si c\u0027est une deuxieme relance, adopte un ton de break-up email poli et ferme, sans culpabiliser le prospect. Pas de markdown, pas d\u0027emojis, pas de ton marketing agressif. Objet: 3 a 7 mots. Corps: 70 a 150 mots. Un seul CTA simple.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Split Boucle Relances\u0027).first().json, type_relance: $(\u0027Split Boucle Relances\u0027).first().json.statut === \u0027email_envoye\u0027 ? \u0027premiere_relance\u0027 : \u0027deuxieme_relance\u0027, dernier_email: { objet: $(\u0027Split Boucle Relances\u0027).first().json.dernier_objet || \u0027\u0027, corps: $(\u0027Split Boucle Relances\u0027).first().json.dernier_corps || \u0027\u0027 } }) }}\"\n    }\n  ]\n}"
+            },
+            "id": "2e728b97-cd1a-4ab3-afa1-581b7aef2dc5",
+            "name": "DeepSeek Generer Email Relance",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -256,
+                752
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "Fi7piKShxfsxAA0V",
+                    "name": "Header Auth agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Relances\u0027).first().json || {};\n\nlet emailData;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\nconst prochainStatut = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2\u0027;\nconst typeEmail = prospect.statut === \u0027email_envoye\u0027 ? \u0027relance_1\u0027 : \u0027relance_2_breakup\u0027;\n\nlet objet = normalize(emailData.objet, prospect.statut === \u0027email_envoye\u0027 ? \u0027Petit suivi\u0027 : \u0027Je clos ce sujet\u0027);\nlet corps = normalize(emailData.corps, \u0027\u0027);\n\nif (!corps || corps.length \u003c 40) {\n  corps = prospect.statut === \u0027email_envoye\u0027\n    ? `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de revenir vers vous concernant mon precedent message. Si le sujet est pertinent pour vous, je peux vous faire un retour tres synthetique ou m\u0027adapter a votre contexte.\n\nDites-moi simplement si cela vaut la peine d\u0027en parler.\n\nBien cordialement`\n    : `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe vous laisse ce dernier message et je ne relancerai pas davantage. Si le sujet devient d\u0027actualite plus tard, je serai ravi d\u0027en reparler avec vous.\n\nBien cordialement`;\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    chat_id: prospect.chat_id || \u0027\u0027,\n    email_objet: objet,\n    email_corps: corps,\n    prochain_statut: prochainStatut,\n    type_email: typeEmail\n  }\n}];"
+            },
+            "id": "b979f96d-b5d8-46a0-8a7d-b6c223be0f95",
+            "name": "Extraire Email Relance",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                752
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.prospect_email }}",
+                "subject": "={{ $json.email_objet }}",
+                "emailType": "text",
+                "message": "={{ $json.email_corps }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "29c4af75-3427-4f68-8e55-0d533b5b2ff3",
+            "name": "Gmail Envoyer Relance",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                256,
+                752
+            ],
+            "webhookId": "7fce4c43-2c21-431e-a22f-630d7ec3b1df",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "828XrCCD0S4lNRT0",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET statut = $1, date_contact = NOW() WHERE id = $2",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [$json.prochain_statut, $json.prospect_id] }}"
+                }
+            },
+            "id": "e07bdc39-1df7-4591-8104-382e1de21e04",
+            "name": "PostgreSQL MAJ Statut Relance",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                512,
+                752
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO emails_log (prospect_id, type_email, objet, corps, date_envoi, statut_envoi) VALUES ($1, $2, $3, $4, NOW(), \u0027envoye\u0027)",
+                "options": {
+                    "queryBatching": "independently",
+                    "queryReplacement": "={{ [$json.prospect_id, $json.type_email, $json.email_objet, $json.email_corps] }}"
+                }
+            },
+            "id": "f53794b5-a879-4d12-a93a-c00a5d5eba0e",
+            "name": "PostgreSQL Log Relance",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                752,
+                752
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "passThrough",
+                "options": {}
+            },
+            "id": "e5f18573-5414-4789-84aa-8957309b552d",
+            "name": "Merge Retour Boucle Relance",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2.1,
+            "position": [
+                1008,
+                752
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE prospects SET statut = \u0027abandonne\u0027 WHERE statut = \u0027relance_2\u0027 AND date_contact \u003c NOW() - INTERVAL \u002710 days\u0027",
+                "options": {}
+            },
+            "id": "7dd0b45f-964d-4079-bd37-de352e0bfa45",
+            "name": "PostgreSQL Archiver Prospects Froids",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -752,
+                960
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) FILTER (WHERE statut = \u0027email_envoye\u0027) as en_attente, COUNT(*) FILTER (WHERE statut IN (\u0027relance_1\u0027,\u0027relance_2\u0027)) as en_relance, COUNT(*) FILTER (WHERE statut = \u0027interesse\u0027) as interesses, COUNT(*) FILTER (WHERE statut = \u0027appel_planifie\u0027) as rdv_planifies, COUNT(*) FILTER (WHERE statut = \u0027abandonne\u0027 AND date_contact \u003e= CURRENT_DATE - INTERVAL \u00271 day\u0027) as abandonnes_aujourd_hui FROM prospects",
+                "options": {}
+            },
+            "id": "4db2eb3a-61f5-4118-9593-2433c7a785e9",
+            "name": "PostgreSQL Stats Quotidiennes",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -496,
+                960
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TRtaTGQNB10KiwWa",
+                    "name": "Postgres agent_s"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "7993226930",
+                "text": "=ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  *Rapport quotidien*\n\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ En attente de rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ponse : *{{ $json.en_attente }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ En cours de relance : *{{ $json.en_relance }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ Prospects intÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.interesses }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ RDV planifiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s : *{{ $json.rdv_planifies }}*\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ArchivÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©s aujourd\u0027hui : *{{ $json.abandonnes_aujourd_hui }}*",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "a894c826-f8b3-4e65-b23d-c8b85f9752cb",
+            "name": "Telegram Rapport Quotidien",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                -256,
+                960
+            ],
+            "webhookId": "b054db26-fe71-4035-bd42-cb6454f09f51",
+            "credentials": {
+                "telegramApi": {
+                    "id": "zqN4TcHqzsYwQR24",
+                    "name": "Telegram agent_s"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Gmail Trigger Reponses": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Identifier Prospect Repondant",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Identifier Prospect Repondant": {
+            "main": [
+                [
+                    {
+                        "node": "IF Prospect Connu",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Prospect Connu": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Analyser Reponse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Analyser Reponse": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Intention Reponse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Intention Reponse": {
+            "main": [
+                [
+                    {
+                        "node": "Switch Sur Action",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Switch Sur Action": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Proposer Creneaux",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "PostgreSQL Marquer Desabonne",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "PostgreSQL Marquer Refus",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "DeepSeek Repondre Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Proposer Creneaux": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail Envoyer Proposition Creneaux",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gmail Envoyer Proposition Creneaux": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Notif Prospect Interesse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Notif Prospect Interesse": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL MAJ Statut Interesse",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Marquer Desabonne": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Notif Desabonnement",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Repondre Message": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail Repondre Au Prospect",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gmail Repondre Au Prospect": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Notif Reponse Envoyee",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Schedule Relances Mardi Mercredi Jeudi 8h": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Charger A Relancer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Charger A Relancer": {
+            "main": [
+                [
+                    {
+                        "node": "IF Des Prospects A Relancer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Des Prospects A Relancer": {
+            "main": [
+                [
+                    {
+                        "node": "Split Boucle Relances",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "PostgreSQL Archiver Prospects Froids",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Boucle Relances": {
+            "main": [
+                [
+                    {
+                        "node": "Wait Anti-Spam Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Anti-Spam Relance": {
+            "main": [
+                [
+                    {
+                        "node": "DeepSeek Generer Email Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Generer Email Relance": {
+            "main": [
+                [
+                    {
+                        "node": "Extraire Email Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraire Email Relance": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail Envoyer Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gmail Envoyer Relance": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL MAJ Statut Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL MAJ Statut Relance": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Log Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Log Relance": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Retour Boucle Relance",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Merge Retour Boucle Relance": {
+            "main": [
+                [
+                    {
+                        "node": "Split Boucle Relances",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Archiver Prospects Froids": {
+            "main": [
+                [
+                    {
+                        "node": "PostgreSQL Stats Quotidiennes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "PostgreSQL Stats Quotidiennes": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Rapport Quotidien",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+    }
 }
