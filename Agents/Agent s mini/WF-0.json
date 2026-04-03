@@ -25,7 +25,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst texte = message.text || '';\nconst chat_id = String(message.chat?.id || '');\nconst from = message.from || {};\n\n// Ignorer les messages vides ou trop courts\nif (!texte || texte.length < 2) {\n  return [];\n}\n\nreturn [{\n  json: {\n    texte: texte,\n    chat_id: chat_id,\n    prenom: from.first_name || '',\n    message_id: message.message_id || null\n  }\n}];"
+                "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst texte = message.text || \u0027\u0027;\nconst chat_id = String(message.chat?.id || \u0027\u0027);\nconst from = message.from || {};\n\n// Ignorer les messages vides ou trop courts\nif (!texte || texte.length \u003c 2) {\n  return [];\n}\n\nreturn [{\n  json: {\n    texte: texte,\n    chat_id: chat_id,\n    prenom: from.first_name || \u0027\u0027,\n    message_id: message.message_id || null\n  }\n}];"
             },
             "id": "16c0ab3a-d155-450b-a310-a689d4157384",
             "name": "Extraire Message Telegram",
@@ -44,7 +44,7 @@
                 "genericAuthType": "httpHeaderAuth",
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={\n  \"parameters\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.texte }}\"\n    }\n  ]\n}",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un routeur d\u0027intention pour un agent commercial. Tu dois classer un message entrant dans UNE seule categorie. Categories: 0 = demande de recherche de prospects, prospection, scraping, trouver des contacts, chercher des entreprises ou freelances; 1 = demande de planification d\u0027appel, rendez-vous, RDV, meeting, call, rappel, calendrier, horaire; 2 = tout le reste, y compris aide, salutation, ambiguite, question generale. Regles obligatoires: reponds uniquement par un seul caractere parmi 0, 1 ou 2. Aucun mot, aucune ponctuation, aucune explication. En cas de doute, retourne 2.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.texte }}\"\n    }\n  ]\n}",
                 "options": {}
             },
             "id": "f5eed2e6-3081-4ff7-9f84-329c545e7143",
@@ -64,7 +64,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const response = $input.first().json;\nconst content = (response.choices[0].message.content || '').trim();\nconst messageData = $('Extraire Message Telegram').first().json;\n\n// Parser l'index — DeepSeek doit retourner 0, 1 ou 2\nlet index = parseInt(content, 10);\nif (isNaN(index) || index < 0 || index > 2) {\n  index = 2; // Fallback sur aide\n}\n\nreturn [{\n  json: {\n    intention_index: index,\n    texte: messageData.texte,\n    chat_id: messageData.chat_id,\n    prenom: messageData.prenom\n  }\n}];"
+                "jsCode": "const response = $input.first().json;\nconst content = (response.choices[0].message.content || \u0027\u0027).trim();\nconst messageData = $(\u0027Extraire Message Telegram\u0027).first().json;\n\n// Parser l\u0027index ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â DeepSeek doit retourner 0, 1 ou 2\nlet index = parseInt(content, 10);\nif (isNaN(index) || index \u003c 0 || index \u003e 2) {\n  index = 2; // Fallback sur aide\n}\n\nreturn [{\n  json: {\n    intention_index: index,\n    texte: messageData.texte,\n    chat_id: messageData.chat_id,\n    prenom: messageData.prenom\n  }\n}];"
             },
             "id": "efe4d039-3bea-4e3c-9e64-64cf1901c676",
             "name": "Extraire Index Intention",
@@ -140,7 +140,7 @@
                 "genericAuthType": "httpHeaderAuth",
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={\n  \"parameters\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Fais-moi une réponse d’aide pour ce message : {{$json.texte}}\"\n    }\n  ]\n}",
+                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.3,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es l\u0027assistant d\u0027aide d\u0027un agent commercial automatise. Reponds en francais, de facon concise, utile et orientee action. Ta mission: expliquer a l\u0027utilisateur ce qu\u0027il peut demander a l\u0027agent. Mentionne au besoin qu\u0027il peut: 1) lancer une recherche de prospects, 2) demander un appel ou un rendez-vous avec un prospect, 3) demander de l\u0027aide. Donne 2 a 4 exemples courts adaptes a Telegram. Ne parle jamais de JSON, de workflow, ni de technique interne. Reste sous 900 caracteres.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Message utilisateur: {{$json.texte}}\"\n    }\n  ]\n}",
                 "options": {}
             },
             "id": "9370d7f0-7f1f-4aeb-aed3-37be3f5de6fc",

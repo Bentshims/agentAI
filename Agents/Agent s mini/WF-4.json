@@ -1,607 +1,618 @@
 {
-    "nodes": [
-        {
-            "parameters": {},
-            "id": "a57ee8de-4c54-43ef-9c6d-eed2aa8e7269",
-            "name": "When Called By WF-0",
-            "type": "n8n-nodes-base.executeWorkflowTrigger",
-            "typeVersion": 1,
-            "position": [
-                -1008,
-                64
-            ]
-        },
-        {
-            "parameters": {
-                "method": "=POST",
-                "url": "https://api.deepseek.com/chat/completions",
-                "authentication": "genericCredentialType",
-                "genericAuthType": "httpHeaderAuth",
-                "sendBody": true,
-                "contentType": "=json",
-                "specifyBody": "json",
-                "bodyParameters": {
-                    "parameters": [
-                        {}
-                    ]
-                },
-                "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un assistant qui extrait une demande de rendez-vous et répond STRICTEMENT en JSON avec: message_valide, action, prospect_id, prospect_nom, date_appel_iso, duree_minutes, notes_appel. Répond uniquement en JSON valide.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $('When Called By WF-0').first().json.message }}\"\n    }\n  ]\n}",
-                "options": {}
-            },
-            "id": "5dda45d3-04a2-4cce-8606-3f065aa4ee26",
-            "name": "DeepSeek Parser Demande Appel",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.2,
-            "position": [
-                -752,
-                64
-            ],
-            "credentials": {
-                "httpHeaderAuth": {
-                    "id": "Fi7piKShxfsxAA0V",
-                    "name": "Header Auth agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "jsCode": "const response = $input.first().json;\nconst content = response.choices[0].message.content;\nconst triggerData = $('When Called By WF-0').first().json;\n\nlet parsed;\ntry {\n  const clean = content.replace(/```json|```/g, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) {\n  throw new Error('Erreur parsing DeepSeek: ' + content.substring(0, 200));\n}\n\nif (!parsed.message_valide || parsed.action !== 'planifier_appel') {\n  return [{ json: { action: 'non_reconnu', chat_id: String(triggerData.chat_id || '') } }];\n}\n\nconst dateAppel = new Date(parsed.date_appel_iso);\nif (isNaN(dateAppel.getTime())) {\n  throw new Error('Date invalide: ' + parsed.date_appel_iso);\n}\nif (dateAppel < new Date()) {\n  throw new Error('La date de l\\'appel est dans le passé: ' + parsed.date_appel_iso);\n}\n\nconst dateFin = new Date(dateAppel.getTime() + (parsed.duree_minutes || 30) * 60000);\n\nreturn [{\n  json: {\n    action: 'planifier_appel',\n    chat_id: String(triggerData.chat_id || ''),\n    prospect_id: parsed.prospect_id || null,\n    prospect_nom: parsed.prospect_nom || 'Prospect',\n    date_appel_iso: dateAppel.toISOString(),\n    date_fin_iso: dateFin.toISOString(),\n    date_appel_affichage: dateAppel.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),\n    heure_affichage: dateAppel.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),\n    duree_minutes: parsed.duree_minutes || 30,\n    notes_appel: parsed.notes_appel || null\n  }\n}];"
-            },
-            "id": "d28ff176-cf80-476f-8940-acf6a4d9a9ca",
-            "name": "Extraire Donnees Appel",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                -496,
-                64
-            ]
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": false,
-                        "leftValue": "",
-                        "typeValidation": "loose"
+    "nodes":  [
+                  {
+                      "parameters":  {
+
+                                     },
+                      "id":  "a57ee8de-4c54-43ef-9c6d-eed2aa8e7269",
+                      "name":  "When Called By WF-0",
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1008,
+                                       64
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "=POST",
+                                         "url":  "https://api.deepseek.com/chat/completions",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
+                                         "sendBody":  true,
+                                         "contentType":  "=json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un parseur de demandes de rendez-vous pour un agent commercial. Tu dois repondre STRICTEMENT en JSON valide avec les cles exactes: message_valide, action, prospect_id, prospect_nom, date_appel_iso, duree_minutes, notes_appel. Regles: action vaut \u0027planifier_appel\u0027 si la demande est exploitable, sinon \u0027non_reconnu\u0027. message_valide est un booleen. prospect_id est un entier ou null. prospect_nom est une chaine. date_appel_iso doit etre une date ISO complete si la demande contient un creneau exploitable, sinon null. duree_minutes est un entier raisonnable entre 15 et 120, par defaut 30. notes_appel resume le besoin en une courte phrase. N\u0027invente pas de prospect_id. Si la date est implicite, fais une interpretation prudente. Si la demande est ambigue ou insuffisante, retourne message_valide false et action \u0027non_reconnu\u0027.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $(\u0027When Called By WF-0\u0027).first().json.texte || $(\u0027When Called By WF-0\u0027).first().json.message || \u0027\u0027 }}\"\n    }\n  ]\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "5dda45d3-04a2-4cce-8606-3f065aa4ee26",
+                      "name":  "DeepSeek Parser Demande Appel",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       -752,
+                                       64
+                                   ],
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "Fi7piKShxfsxAA0V",
+                                                                 "name":  "Header Auth agent_s"
+                                                             }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst triggerData = $(\u0027When Called By WF-0\u0027).first().json || {};\n\nlet parsed;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  parsed = JSON.parse(clean);\n} catch (e) {\n  parsed = {};\n}\n\nif (!parsed.message_valide || parsed.action !== \u0027planifier_appel\u0027 || !parsed.date_appel_iso) {\n  return [{ json: { action: \u0027non_reconnu\u0027, chat_id: String(triggerData.chat_id || \u0027\u0027) } }];\n}\n\nconst dateAppel = new Date(parsed.date_appel_iso);\nif (Number.isNaN(dateAppel.getTime()) || dateAppel \u003c new Date()) {\n  return [{ json: { action: \u0027non_reconnu\u0027, chat_id: String(triggerData.chat_id || \u0027\u0027) } }];\n}\n\nconst duree = Math.min(120, Math.max(15, Number.parseInt(parsed.duree_minutes, 10) || 30));\nconst dateFin = new Date(dateAppel.getTime() + duree * 60000);\n\nreturn [{\n  json: {\n    action: \u0027planifier_appel\u0027,\n    chat_id: String(triggerData.chat_id || \u0027\u0027),\n    prospect_id: parsed.prospect_id || null,\n    prospect_nom: (typeof parsed.prospect_nom === \u0027string\u0027 \u0026\u0026 parsed.prospect_nom.trim()) ? parsed.prospect_nom.trim() : \u0027Prospect\u0027,\n    date_appel_iso: dateAppel.toISOString(),\n    date_fin_iso: dateFin.toISOString(),\n    date_appel_affichage: dateAppel.toLocaleDateString(\u0027fr-FR\u0027, { weekday: \u0027long\u0027, day: \u0027numeric\u0027, month: \u0027long\u0027 }),\n    heure_affichage: dateAppel.toLocaleTimeString(\u0027fr-FR\u0027, { hour: \u00272-digit\u0027, minute: \u00272-digit\u0027 }),\n    duree_minutes: duree,\n    notes_appel: typeof parsed.notes_appel === \u0027string\u0027 ? parsed.notes_appel.trim() : null\n  }\n}];"
+                                     },
+                      "id":  "d28ff176-cf80-476f-8940-acf6a4d9a9ca",
+                      "name":  "Extraire Donnees Appel",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -496,
+                                       64
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-action",
+                                                                                   "leftValue":  "={{ $json.action }}",
+                                                                                   "rightValue":  "planifier_appel",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "a250acf8-26ff-4114-b041-680404a04e27",
+                      "name":  "IF Action Valide",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -256,
+                                       64
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "=7993226930",
+                                         "text":  "ÃƒÂ¢Ã‚ÂÃ¢â‚¬Å“ Je n\u0027ai pas compris cette demande.\n\nExemples valides :\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ _\"Planifie appel prospect 3, mardi 14h\"_\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ _\"Appel avec Agence Lyon demain ÃƒÆ’Ã‚Â  10h30\"_\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ _\"RDV prospect Jean Dupont vendredi 15h\"_",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "b508d3d4-94b8-42b2-9361-1f35be55bf92",
+                      "name":  "Telegram Non Reconnu",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       0,
+                                       256
+                                   ],
+                      "webhookId":  "378e174f-f8f7-40b7-a7c4-21f51bd325a2",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "zqN4TcHqzsYwQR24",
+                                                              "name":  "Telegram agent_s"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT id, nom, email, telephone, linkedin_url, secteur, score_pertinence, description FROM prospects WHERE ($1::integer IS NULL OR id = $1::integer) AND ($2 = \u0027Prospect\u0027 OR LOWER(nom) LIKE LOWER(\u0027%\u0027 || $2 || \u0027%\u0027)) LIMIT 1",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ [$json.prospect_id, $json.prospect_nom] }}"
+                                                     }
+                                     },
+                      "id":  "7455650e-bc98-4fcd-8616-6d07fd1f02ad",
+                      "name":  "PostgreSQL Charger Prospect",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       0,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "calendar":  {
+                                                          "__rl":  true,
+                                                          "mode":  "list",
+                                                          "value":  "primary"
+                                                      },
+                                         "start":  "={{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_iso }}",
+                                         "end":  "={{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_fin_iso }}",
+                                         "additionalFields":  {
+                                                                  "description":  "=ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || \u0027N/A\u0027 }}\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â§ Email : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.email || \u0027N/A\u0027 }}\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾ TÃƒÆ’Ã‚Â©l : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.telephone || \u0027N/A\u0027 }}\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ LinkedIn : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.linkedin_url || \u0027N/A\u0027 }}\nÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â­ Secteur : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.secteur || \u0027N/A\u0027 }}\nÃƒÂ¢Ã‚Â­Ã‚Â Score : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.score_pertinence || \u0027N/A\u0027 }}/10\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â Notes : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.notes_appel || \u0027Aucune note\u0027 }}\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¹ Profil :\n{{ ($(\u0027PostgreSQL Charger Prospect\u0027).first().json.description || \u0027N/A\u0027).substring(0, 400) }}",
+                                                                  "summary":  "=ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾ Appel prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}"
+                                                              }
+                                     },
+                      "id":  "5bdafe21-45bb-42f8-82d2-13a37dac803b",
+                      "name":  "Google Calendar Creer Evenement",
+                      "type":  "n8n-nodes-base.googleCalendar",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       256,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "googleCalendarOAuth2Api":  {
+                                                                          "id":  "kAuaqjV9Sj68uW3P",
+                                                                          "name":  "Google Calendar account"
+                                                                      }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "INSERT INTO appels_planifies (prospect_id, prospect_nom, date_appel, duree_minutes, gcal_event_id, statut, notes, chat_id, rappel_3h_envoye, rappel_1h_envoye, rappel_30min_envoye, rappel_heure_envoye) VALUES ($1, $2, $3, $4, $5, \u0027planifie\u0027, $6, $7, false, false, false, false) RETURNING id",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ [$(\u0027PostgreSQL Charger Prospect\u0027).first().json.id || null, $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom, $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_iso, $(\u0027Extraire Donnees Appel\u0027).first().json.duree_minutes, $json.id, $(\u0027Extraire Donnees Appel\u0027).first().json.notes_appel || \u0027\u0027, $(\u0027Extraire Donnees Appel\u0027).first().json.chat_id] }}"
+                                                     }
+                                     },
+                      "id":  "e0d147e9-89af-42dc-94ca-08e79026dd6a",
+                      "name":  "PostgreSQL Sauvegarder Appel",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       512,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE prospects SET statut = \u0027appel_planifie\u0027, notes = COALESCE(notes, \u0027\u0027) || \u0027 | Appel planifiÃƒÆ’Ã‚Â© le \u0027 || $1 WHERE id = $2",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ [$(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_affichage + \u0027 a \u0027 + $(\u0027Extraire Donnees Appel\u0027).first().json.heure_affichage, $(\u0027PostgreSQL Charger Prospect\u0027).first().json.id] }}"
+                                                     }
+                                     },
+                      "id":  "ad135336-0157-4933-aeec-3f564367aac8",
+                      "name":  "PostgreSQL MAJ Statut Prospect",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       752,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "=7993226930",
+                                         "text":  "=ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ *Appel planifiÃƒÆ’Ã‚Â© !*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾ *{{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}*\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¦ *{{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_affichage }}* ÃƒÆ’Ã‚Â  *{{ $(\u0027Extraire Donnees Appel\u0027).first().json.heure_affichage }}*\nÃƒÂ¢Ã‚ÂÃ‚Â± DurÃƒÆ’Ã‚Â©e : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.duree_minutes }} minutes\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¦ ÃƒÆ’Ã¢â‚¬Â°vÃƒÆ’Ã‚Â©nement crÃƒÆ’Ã‚Â©ÃƒÆ’Ã‚Â© dans Google Calendar\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â *Tu seras notifiÃƒÆ’Ã‚Â© :*\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ 3h avant l\u0027appel\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ 1h avant l\u0027appel\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ 30 min avant l\u0027appel\nÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ÃƒÆ’Ã¢â€šÂ¬ l\u0027heure H avec la fiche complÃƒÆ’Ã‚Â¨te",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "b77dc973-032e-44d1-8ee3-38caadf60594",
+                      "name":  "Telegram Confirmation RDV",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       1008,
+                                       0
+                                   ],
+                      "webhookId":  "74317160-1134-43e4-99c0-27e2cdf545c4",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "zqN4TcHqzsYwQR24",
+                                                              "name":  "Telegram agent_s"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "minutes",
+                                                                           "minutesInterval":  15
+                                                                       }
+                                                                   ]
+                                                  }
+                                     },
+                      "id":  "5c15dca5-725b-4dfb-86ba-1f7f070cb593",
+                      "name":  "Schedule Polling Rappels 15min",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       -1008,
+                                       560
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT a.id, a.prospect_id, a.prospect_nom, a.date_appel, a.gcal_event_id, a.chat_id, a.rappel_3h_envoye, a.rappel_1h_envoye, a.rappel_30min_envoye, a.rappel_heure_envoye, a.notes, p.email, p.telephone, p.linkedin_url, p.secteur, p.score_pertinence, p.description FROM appels_planifies a LEFT JOIN prospects p ON p.id = a.prospect_id WHERE a.statut = \u0027planifie\u0027 AND a.date_appel \u003e NOW() - INTERVAL \u00275 minutes\u0027 AND a.date_appel \u003c NOW() + INTERVAL \u00274 hours\u0027",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "9ffda18b-f5e7-4d49-84b2-999c80df5122",
+                      "name":  "PostgreSQL Charger Appels a Notifier",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       -752,
+                                       560
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-appels",
+                                                                                   "leftValue":  "={{ $input.all().length }}",
+                                                                                   "rightValue":  0,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gt"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "0ef621ee-8170-4b9f-adaf-7598fd1c09aa",
+                      "name":  "IF Des Appels Proches",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -496,
+                                       560
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const now = new Date();\nconst items = $input.all();\nconst rappelsAEnvoyer = [];\n\nfor (const item of items) {\n  const a = item.json;\n  const dateAppel = new Date(a.date_appel);\n  const diffMs = dateAppel.getTime() - now.getTime();\n  const diffMin = diffMs / 60000;\n\n  if (diffMin \u003e= 175 \u0026\u0026 diffMin \u003c= 185 \u0026\u0026 !a.rappel_3h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00273h\u0027, emoji: \u0027ÃƒÂ¢Ã‚ÂÃ‚Â°\u0027, message_rappel: \u0027dans 3 heures\u0027 } });\n  } else if (diffMin \u003e= 55 \u0026\u0026 diffMin \u003c= 65 \u0026\u0026 !a.rappel_1h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00271h\u0027, emoji: \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â\u0027, message_rappel: \u0027dans 1 heure\u0027 } });\n  } else if (diffMin \u003e= 25 \u0026\u0026 diffMin \u003c= 35 \u0026\u0026 !a.rappel_30min_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u002730min\u0027, emoji: \u0027ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨\u0027, message_rappel: \u0027dans 30 minutes\u0027 } });\n  } else if (diffMin \u003e= -5 \u0026\u0026 diffMin \u003c= 5 \u0026\u0026 !a.rappel_heure_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u0027heure_h\u0027, emoji: \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾\u0027, message_rappel: \"C\u0027EST L\u0027HEURE !\" } });\n  }\n}\n\nreturn rappelsAEnvoyer.length \u003e 0 ? rappelsAEnvoyer : [];"
+                                     },
+                      "id":  "e6852e16-85cb-4b1a-9ecb-fbdcf3e10116",
+                      "name":  "Calculer Rappels a Envoyer",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -256,
+                                       560
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-rappels",
+                                                                                   "leftValue":  "={{ $input.all().length }}",
+                                                                                   "rightValue":  0,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gt"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "06a0fec5-6580-490f-b1e3-71db97a1fc4b",
+                      "name":  "IF Rappels a Envoyer",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       0,
+                                       560
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "=7993226930",
+                                         "text":  "={{ \n  const a = $json;\n  const dateAppel = new Date(a.date_appel);\n  const heure = dateAppel.toLocaleTimeString(\u0027fr-FR\u0027, { hour: \u00272-digit\u0027, minute: \u00272-digit\u0027 });\n  \n  let msg = a.emoji + \u0027 *Rappel appel ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â \u0027 + a.message_rappel + \u0027*\\n\\n\u0027;\n  msg += \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾ *Prospect :* \u0027 + a.prospect_nom + \u0027\\n\u0027;\n  msg += \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬Â¢Ã‚Â *Heure :* \u0027 + heure + \u0027\\n\u0027;\n  if (a.email) msg += \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â§ *Email :* \u0027 + a.email + \u0027\\n\u0027;\n  if (a.telephone) msg += \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¾ *TÃƒÆ’Ã‚Â©l :* \u0027 + a.telephone + \u0027\\n\u0027;\n  if (a.linkedin_url) msg += \u0027ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ *LinkedIn :* \u0027 + a.linkedin_url + \u0027\\n\u0027;\n  if (a.secteur) msg += \u0027ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â­ *Secteur :* \u0027 + a.secteur + \u0027\\n\u0027;\n  if (a.score_pertinence) msg += \u0027ÃƒÂ¢Ã‚Â­Ã‚Â *Score :* \u0027 + a.score_pertinence + \u0027/10\\n\u0027;\n  if (a.type_rappel === \u0027heure_h\u0027) {\n    msg += \u0027\\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¹ *Profil :*\\n\u0027;\n    msg += (a.description || \u0027Aucune description\u0027).substring(0, 400) + \u0027\\n\u0027;\n    if (a.notes) msg += \u0027\\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â *Notes :* \u0027 + a.notes;\n  }\n  return msg;\n}}",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "818eb6e2-b6be-4244-a0d5-f96bb4bfd41d",
+                      "name":  "Telegram Envoyer Rappel",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       256,
+                                       512
+                                   ],
+                      "webhookId":  "600206b9-c702-437a-b663-15e7763afe09",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "zqN4TcHqzsYwQR24",
+                                                              "name":  "Telegram agent_s"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "{{ \n  const t = $json.type_rappel;\n  let col = \u0027\u0027;\n  if (t === \u00273h\u0027) col = \u0027rappel_3h_envoye\u0027;\n  else if (t === \u00271h\u0027) col = \u0027rappel_1h_envoye\u0027;\n  else if (t === \u002730min\u0027) col = \u0027rappel_30min_envoye\u0027;\n  else if (t === \u0027heure_h\u0027) col = \u0027rappel_heure_envoye\u0027;\n  return \u0027UPDATE appels_planifies SET \u0027 + col + \u0027 = true WHERE id = \u0027 + $json.id;\n}}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "7e6836d4-017d-4d81-9550-f387729413a5",
+                      "name":  "PostgreSQL Marquer Rappel Envoye",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       512,
+                                       512
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE appels_planifies SET statut = \u0027effectue\u0027 WHERE id = $1 AND rappel_heure_envoye = true AND date_appel \u003c NOW() - INTERVAL \u00271 hour\u0027",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ $json.id }}"
+                                                     }
+                                     },
+                      "id":  "18690b8e-91d2-4750-b205-6c626f6dbddf",
+                      "name":  "PostgreSQL MAJ Statut Appel Effectue",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       752,
+                                       512
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "When Called By WF-0":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "DeepSeek Parser Demande Appel",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "DeepSeek Parser Demande Appel":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Extraire Donnees Appel",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          },
+                        "Extraire Donnees Appel":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "IF Action Valide",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "IF Action Valide":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "PostgreSQL Charger Prospect",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      "node":  "Telegram Non Reconnu",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "PostgreSQL Charger Prospect":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Google Calendar Creer Evenement",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Google Calendar Creer Evenement":  {
+                                                                "main":  [
+                                                                             [
+                                                                                 {
+                                                                                     "node":  "PostgreSQL Sauvegarder Appel",
+                                                                                     "type":  "main",
+                                                                                     "index":  0
+                                                                                 }
+                                                                             ]
+                                                                         ]
+                                                            },
+                        "PostgreSQL Sauvegarder Appel":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "PostgreSQL MAJ Statut Prospect",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         },
+                        "PostgreSQL MAJ Statut Prospect":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Telegram Confirmation RDV",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Schedule Polling Rappels 15min":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "PostgreSQL Charger Appels a Notifier",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "PostgreSQL Charger Appels a Notifier":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "IF Des Appels Proches",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                        "IF Des Appels Proches":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Calculer Rappels a Envoyer",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Calculer Rappels a Envoyer":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "IF Rappels a Envoyer",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "IF Rappels a Envoyer":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Telegram Envoyer Rappel",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Telegram Envoyer Rappel":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "PostgreSQL Marquer Rappel Envoye",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "PostgreSQL Marquer Rappel Envoye":  {
+                                                                 "main":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "PostgreSQL MAJ Statut Appel Effectue",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                             }
                     },
-                    "conditions": [
-                        {
-                            "id": "cond-action",
-                            "leftValue": "={{ $json.action }}",
-                            "rightValue": "planifier_appel",
-                            "operator": {
-                                "type": "string",
-                                "operation": "equals"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
+    "pinData":  {
+
                 },
-                "options": {}
-            },
-            "id": "a250acf8-26ff-4114-b041-680404a04e27",
-            "name": "IF Action Valide",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2,
-            "position": [
-                -256,
-                64
-            ]
-        },
-        {
-            "parameters": {
-                "chatId": "=7993226930",
-                "text": "❓ Je n'ai pas compris cette demande.\n\nExemples valides :\n• _\"Planifie appel prospect 3, mardi 14h\"_\n• _\"Appel avec Agence Lyon demain à 10h30\"_\n• _\"RDV prospect Jean Dupont vendredi 15h\"_",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
-            },
-            "id": "b508d3d4-94b8-42b2-9361-1f35be55bf92",
-            "name": "Telegram Non Reconnu",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1.2,
-            "position": [
-                0,
-                256
-            ],
-            "webhookId": "378e174f-f8f7-40b7-a7c4-21f51bd325a2",
-            "credentials": {
-                "telegramApi": {
-                    "id": "zqN4TcHqzsYwQR24",
-                    "name": "Telegram agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT id, nom, email, telephone, linkedin_url, secteur, score_pertinence, description FROM prospects WHERE ($1::integer IS NULL OR id = $1::integer) AND ($2 = 'Prospect' OR LOWER(nom) LIKE LOWER('%' || $2 || '%')) LIMIT 1",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ [$json.prospect_id, $json.prospect_nom].join(',') }}"
-                }
-            },
-            "id": "7455650e-bc98-4fcd-8616-6d07fd1f02ad",
-            "name": "PostgreSQL Charger Prospect",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                0,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "calendar": {
-                    "__rl": true,
-                    "mode": "list",
-                    "value": "primary"
-                },
-                "start": "={{ $('Extraire Donnees Appel').first().json.date_appel_iso }}",
-                "end": "={{ $('Extraire Donnees Appel').first().json.date_fin_iso }}",
-                "additionalFields": {
-                    "description": "=🎯 Prospect : {{ $('PostgreSQL Charger Prospect').first().json.nom || 'N/A' }}\n📧 Email : {{ $('PostgreSQL Charger Prospect').first().json.email || 'N/A' }}\n📞 Tél : {{ $('PostgreSQL Charger Prospect').first().json.telephone || 'N/A' }}\n🔗 LinkedIn : {{ $('PostgreSQL Charger Prospect').first().json.linkedin_url || 'N/A' }}\n🏭 Secteur : {{ $('PostgreSQL Charger Prospect').first().json.secteur || 'N/A' }}\n⭐ Score : {{ $('PostgreSQL Charger Prospect').first().json.score_pertinence || 'N/A' }}/10\n\n📝 Notes : {{ $('Extraire Donnees Appel').first().json.notes_appel || 'Aucune note' }}\n\n📋 Profil :\n{{ ($('PostgreSQL Charger Prospect').first().json.description || 'N/A').substring(0, 400) }}",
-                    "summary": "=📞 Appel prospect : {{ $('PostgreSQL Charger Prospect').first().json.nom || $('Extraire Donnees Appel').first().json.prospect_nom }}"
-                }
-            },
-            "id": "5bdafe21-45bb-42f8-82d2-13a37dac803b",
-            "name": "Google Calendar Creer Evenement",
-            "type": "n8n-nodes-base.googleCalendar",
-            "typeVersion": 1.3,
-            "position": [
-                256,
-                0
-            ],
-            "credentials": {
-                "googleCalendarOAuth2Api": {
-                    "id": "kAuaqjV9Sj68uW3P",
-                    "name": "Google Calendar account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "INSERT INTO appels_planifies (prospect_id, prospect_nom, date_appel, duree_minutes, gcal_event_id, statut, notes, chat_id, rappel_3h_envoye, rappel_1h_envoye, rappel_30min_envoye, rappel_heure_envoye) VALUES ($1, $2, $3, $4, $5, 'planifie', $6, $7, false, false, false, false) RETURNING id",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ [\n  $('PostgreSQL Charger Prospect').first().json.id || null,\n  $('PostgreSQL Charger Prospect').first().json.nom || $('Extraire Donnees Appel').first().json.prospect_nom,\n  $('Extraire Donnees Appel').first().json.date_appel_iso,\n  $('Extraire Donnees Appel').first().json.duree_minutes,\n  $json.id,\n  $('Extraire Donnees Appel').first().json.notes_appel || '',\n  $('Extraire Donnees Appel').first().json.chat_id\n].join('|||') }}"
-                }
-            },
-            "id": "e0d147e9-89af-42dc-94ca-08e79026dd6a",
-            "name": "PostgreSQL Sauvegarder Appel",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                512,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "UPDATE prospects SET statut = 'appel_planifie', notes = COALESCE(notes, '') || ' | Appel planifié le ' || $1 WHERE id = $2",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ [$('Extraire Donnees Appel').first().json.date_appel_affichage + ' à ' + $('Extraire Donnees Appel').first().json.heure_affichage, $('PostgreSQL Charger Prospect').first().json.id].join(',') }}"
-                }
-            },
-            "id": "ad135336-0157-4933-aeec-3f564367aac8",
-            "name": "PostgreSQL MAJ Statut Prospect",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                752,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "chatId": "=7993226930",
-                "text": "=✅ *Appel planifié !*\n\n📞 *{{ $('PostgreSQL Charger Prospect').first().json.nom || $('Extraire Donnees Appel').first().json.prospect_nom }}*\n📅 *{{ $('Extraire Donnees Appel').first().json.date_appel_affichage }}* à *{{ $('Extraire Donnees Appel').first().json.heure_affichage }}*\n⏱ Durée : {{ $('Extraire Donnees Appel').first().json.duree_minutes }} minutes\n\n📅 Événement créé dans Google Calendar\n\n🔔 *Tu seras notifié :*\n• 3h avant l'appel\n• 1h avant l'appel\n• 30 min avant l'appel\n• À l'heure H avec la fiche complète",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
-            },
-            "id": "b77dc973-032e-44d1-8ee3-38caadf60594",
-            "name": "Telegram Confirmation RDV",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1.2,
-            "position": [
-                1008,
-                0
-            ],
-            "webhookId": "74317160-1134-43e4-99c0-27e2cdf545c4",
-            "credentials": {
-                "telegramApi": {
-                    "id": "zqN4TcHqzsYwQR24",
-                    "name": "Telegram agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "rule": {
-                    "interval": [
-                        {
-                            "field": "minutes",
-                            "minutesInterval": 15
-                        }
-                    ]
-                }
-            },
-            "id": "5c15dca5-725b-4dfb-86ba-1f7f070cb593",
-            "name": "Schedule Polling Rappels 15min",
-            "type": "n8n-nodes-base.scheduleTrigger",
-            "typeVersion": 1.2,
-            "position": [
-                -1008,
-                560
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT a.id, a.prospect_id, a.prospect_nom, a.date_appel, a.gcal_event_id, a.chat_id, a.rappel_3h_envoye, a.rappel_1h_envoye, a.rappel_30min_envoye, a.rappel_heure_envoye, a.notes, p.email, p.telephone, p.linkedin_url, p.secteur, p.score_pertinence, p.description FROM appels_planifies a LEFT JOIN prospects p ON p.id = a.prospect_id WHERE a.statut = 'planifie' AND a.date_appel > NOW() - INTERVAL '5 minutes' AND a.date_appel < NOW() + INTERVAL '4 hours'",
-                "options": {}
-            },
-            "id": "9ffda18b-f5e7-4d49-84b2-999c80df5122",
-            "name": "PostgreSQL Charger Appels a Notifier",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                -752,
-                560
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": false,
-                        "leftValue": "",
-                        "typeValidation": "loose"
-                    },
-                    "conditions": [
-                        {
-                            "id": "cond-appels",
-                            "leftValue": "={{ $input.all().length }}",
-                            "rightValue": 0,
-                            "operator": {
-                                "type": "number",
-                                "operation": "gt"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
-                },
-                "options": {}
-            },
-            "id": "0ef621ee-8170-4b9f-adaf-7598fd1c09aa",
-            "name": "IF Des Appels Proches",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2,
-            "position": [
-                -496,
-                560
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const now = new Date();\nconst items = $input.all();\nconst rappelsAEnvoyer = [];\n\nfor (const item of items) {\n  const a = item.json;\n  const dateAppel = new Date(a.date_appel);\n  const diffMs = dateAppel.getTime() - now.getTime();\n  const diffMin = diffMs / 60000;\n\n  if (diffMin >= 175 && diffMin <= 185 && !a.rappel_3h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: '3h', emoji: '⏰', message_rappel: 'dans 3 heures' } });\n  } else if (diffMin >= 55 && diffMin <= 65 && !a.rappel_1h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: '1h', emoji: '🔔', message_rappel: 'dans 1 heure' } });\n  } else if (diffMin >= 25 && diffMin <= 35 && !a.rappel_30min_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: '30min', emoji: '🚨', message_rappel: 'dans 30 minutes' } });\n  } else if (diffMin >= -5 && diffMin <= 5 && !a.rappel_heure_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: 'heure_h', emoji: '📞', message_rappel: \"C'EST L'HEURE !\" } });\n  }\n}\n\nreturn rappelsAEnvoyer.length > 0 ? rappelsAEnvoyer : [];"
-            },
-            "id": "e6852e16-85cb-4b1a-9ecb-fbdcf3e10116",
-            "name": "Calculer Rappels a Envoyer",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                -256,
-                560
-            ]
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": false,
-                        "leftValue": "",
-                        "typeValidation": "loose"
-                    },
-                    "conditions": [
-                        {
-                            "id": "cond-rappels",
-                            "leftValue": "={{ $input.all().length }}",
-                            "rightValue": 0,
-                            "operator": {
-                                "type": "number",
-                                "operation": "gt"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
-                },
-                "options": {}
-            },
-            "id": "06a0fec5-6580-490f-b1e3-71db97a1fc4b",
-            "name": "IF Rappels a Envoyer",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2,
-            "position": [
-                0,
-                560
-            ]
-        },
-        {
-            "parameters": {
-                "chatId": "=7993226930",
-                "text": "={{ \n  const a = $json;\n  const dateAppel = new Date(a.date_appel);\n  const heure = dateAppel.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });\n  \n  let msg = a.emoji + ' *Rappel appel — ' + a.message_rappel + '*\\n\\n';\n  msg += '📞 *Prospect :* ' + a.prospect_nom + '\\n';\n  msg += '🕐 *Heure :* ' + heure + '\\n';\n  if (a.email) msg += '📧 *Email :* ' + a.email + '\\n';\n  if (a.telephone) msg += '📞 *Tél :* ' + a.telephone + '\\n';\n  if (a.linkedin_url) msg += '🔗 *LinkedIn :* ' + a.linkedin_url + '\\n';\n  if (a.secteur) msg += '🏭 *Secteur :* ' + a.secteur + '\\n';\n  if (a.score_pertinence) msg += '⭐ *Score :* ' + a.score_pertinence + '/10\\n';\n  if (a.type_rappel === 'heure_h') {\n    msg += '\\n📋 *Profil :*\\n';\n    msg += (a.description || 'Aucune description').substring(0, 400) + '\\n';\n    if (a.notes) msg += '\\n📝 *Notes :* ' + a.notes;\n  }\n  return msg;\n}}",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
-            },
-            "id": "818eb6e2-b6be-4244-a0d5-f96bb4bfd41d",
-            "name": "Telegram Envoyer Rappel",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1.2,
-            "position": [
-                256,
-                512
-            ],
-            "webhookId": "600206b9-c702-437a-b663-15e7763afe09",
-            "credentials": {
-                "telegramApi": {
-                    "id": "zqN4TcHqzsYwQR24",
-                    "name": "Telegram agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "{{ \n  const t = $json.type_rappel;\n  let col = '';\n  if (t === '3h') col = 'rappel_3h_envoye';\n  else if (t === '1h') col = 'rappel_1h_envoye';\n  else if (t === '30min') col = 'rappel_30min_envoye';\n  else if (t === 'heure_h') col = 'rappel_heure_envoye';\n  return 'UPDATE appels_planifies SET ' + col + ' = true WHERE id = ' + $json.id;\n}}",
-                "options": {}
-            },
-            "id": "7e6836d4-017d-4d81-9550-f387729413a5",
-            "name": "PostgreSQL Marquer Rappel Envoye",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                512,
-                512
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "UPDATE appels_planifies SET statut = 'effectue' WHERE id = $1 AND rappel_heure_envoye = true AND date_appel < NOW() - INTERVAL '1 hour'",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ $json.id }}"
-                }
-            },
-            "id": "18690b8e-91d2-4750-b205-6c626f6dbddf",
-            "name": "PostgreSQL MAJ Statut Appel Effectue",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                752,
-                512
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        }
-    ],
-    "connections": {
-        "When Called By WF-0": {
-            "main": [
-                [
-                    {
-                        "node": "DeepSeek Parser Demande Appel",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "DeepSeek Parser Demande Appel": {
-            "main": [
-                [
-                    {
-                        "node": "Extraire Donnees Appel",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Extraire Donnees Appel": {
-            "main": [
-                [
-                    {
-                        "node": "IF Action Valide",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "IF Action Valide": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Charger Prospect",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Telegram Non Reconnu",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Charger Prospect": {
-            "main": [
-                [
-                    {
-                        "node": "Google Calendar Creer Evenement",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Google Calendar Creer Evenement": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Sauvegarder Appel",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Sauvegarder Appel": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL MAJ Statut Prospect",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL MAJ Statut Prospect": {
-            "main": [
-                [
-                    {
-                        "node": "Telegram Confirmation RDV",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Schedule Polling Rappels 15min": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Charger Appels a Notifier",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Charger Appels a Notifier": {
-            "main": [
-                [
-                    {
-                        "node": "IF Des Appels Proches",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "IF Des Appels Proches": {
-            "main": [
-                [
-                    {
-                        "node": "Calculer Rappels a Envoyer",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Calculer Rappels a Envoyer": {
-            "main": [
-                [
-                    {
-                        "node": "IF Rappels a Envoyer",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "IF Rappels a Envoyer": {
-            "main": [
-                [
-                    {
-                        "node": "Telegram Envoyer Rappel",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Telegram Envoyer Rappel": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Marquer Rappel Envoye",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Marquer Rappel Envoye": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL MAJ Statut Appel Effectue",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        }
-    },
-    "pinData": {},
-    "meta": {
-        "templateCredsSetupCompleted": true,
-        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
-    }
+    "meta":  {
+                 "templateCredsSetupCompleted":  true,
+                 "instanceId":  "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+             }
 }

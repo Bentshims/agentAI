@@ -1,468 +1,479 @@
 {
-    "nodes": [
-        {
-            "parameters": {},
-            "id": "48d67b09-2d2a-4570-b76a-7466460f5d6f",
-            "name": "Execute Workflow Trigger",
-            "type": "n8n-nodes-base.executeWorkflowTrigger",
-            "typeVersion": 1,
-            "position": [
-                0,
-                0
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT id, type, nom, email, telephone, site_web, linkedin_url, localisation, secteur, description, score_pertinence, session_id, chat_id FROM prospects WHERE statut = 'a_contacter' AND email IS NOT NULL AND email != '' ORDER BY score_pertinence DESC",
-                "options": {}
-            },
-            "id": "85386e06-11d5-4e27-9b68-2874e1ea5927",
-            "name": "PostgreSQL Charger Prospects A Contacter",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                256,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "conditions": [
-                        {
-                            "id": "cond-email",
-                            "leftValue": "={{ $input.all().length }}",
-                            "rightValue": 0,
-                            "operator": {
-                                "type": "number",
-                                "operation": "gt"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
+    "nodes":  [
+                  {
+                      "parameters":  {
+
+                                     },
+                      "id":  "48d67b09-2d2a-4570-b76a-7466460f5d6f",
+                      "name":  "Execute Workflow Trigger",
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       0,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT id, type, nom, email, telephone, site_web, linkedin_url, localisation, secteur, description, score_pertinence, session_id, chat_id FROM prospects WHERE statut = \u0027a_contacter\u0027 AND email IS NOT NULL AND email != \u0027\u0027 ORDER BY score_pertinence DESC",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "85386e06-11d5-4e27-9b68-2874e1ea5927",
+                      "name":  "PostgreSQL Charger Prospects A Contacter",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       256,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-email",
+                                                                                   "leftValue":  "={{ $input.all().length }}",
+                                                                                   "rightValue":  0,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gt"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "efbc7296-6e51-4d07-8c04-cb3e0eb7ae16",
+                      "name":  "IF Des Prospects Avec Email",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       512,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "=7993226930",
+                                         "text":  "ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â *Aucun prospect ÃƒÆ’Ã‚Â  contacter* en ce moment.\n\nTous les prospects ont dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  ÃƒÆ’Ã‚Â©tÃƒÆ’Ã‚Â© contactÃƒÆ’Ã‚Â©s ou n\u0027ont pas d\u0027email disponible.",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "6352df2e-5410-4f7f-a143-9b8dcd8cc8db",
+                      "name":  "Telegram Aucun Email a Envoyer",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       752,
+                                       224
+                                   ],
+                      "webhookId":  "b3dd59e8-8a96-4640-9070-1568f3722f1b",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "zqN4TcHqzsYwQR24",
+                                                              "name":  "Telegram agent_s"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+                                                         "reset":  false
+                                                     }
+                                     },
+                      "id":  "7682f893-9370-4710-99d6-ae62abc904c8",
+                      "name":  "Split Boucle Emails",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       752,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "amount":  "={{ Math.floor(Math.random() * 60) + 30 }}"
+                                     },
+                      "id":  "a1f45a4f-3d03-4c39-ba0e-305b40ffb39e",
+                      "name":  "Wait Anti-Spam 30-90s",
+                      "type":  "n8n-nodes-base.wait",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1008,
+                                       0
+                                   ],
+                      "webhookId":  "962961cb-0759-4004-bbf2-014e3530f4a4"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://api.deepseek.com/chat/completions",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
+                                         "sendBody":  true,
+                                         "options":  {
+
+                                                     },
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.45,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un copywriter senior en cold email B2B/B2C francophone, specialise en prospection sobre, credible et a forte delivrabilite. Tu dois produire STRICTEMENT un JSON valide avec les cles exactes: objet, corps, preview_text. Contraintes absolues: pas de markdown, pas de balises HTML, pas d\u0027emojis, pas de ton hype, pas de promesse exageree, pas de formule spam. L\u0027objet doit contenir 3 a 7 mots, naturel, specifique, sans tout majuscule. Le corps doit faire entre 90 et 180 mots, etre personnalise au prospect, montrer que tu as compris son contexte, apporter une proposition de valeur concrete, contenir un seul appel a l\u0027action simple, et rester poli et humain. N\u0027invente jamais de faits non presents. Si des informations sont manquantes, reste generique mais professionnel. Le preview_text doit faire entre 40 et 90 caracteres.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ JSON.stringify({ prospect: $(\u0027Split Boucle Emails\u0027).first().json }) }}\"\n    }\n  ]\n}"
+                                     },
+                      "id":  "84b96872-e507-493e-b2a4-9594ae5a621b",
+                      "name":  "DeepSeek Generer Email Personnalise",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1264,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "Fi7piKShxfsxAA0V",
+                                                                 "name":  "Header Auth agent_s"
+                                                             }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const response = $input.first().json || {};\nconst content = response?.choices?.[0]?.message?.content || \u0027\u0027;\nconst prospect = $(\u0027Split Boucle Emails\u0027).first().json || {};\n\nlet emailData;\ntry {\n  const clean = String(content).replace(/```json|```/g, \u0027\u0027).trim();\n  emailData = JSON.parse(clean);\n} catch (e) {\n  emailData = {};\n}\n\nconst normalize = (value, fallback = \u0027\u0027) =\u003e typeof value === \u0027string\u0027 ? value.trim() || fallback : fallback;\n\nlet objet = normalize(emailData.objet, `Suite a propos de ${prospect.nom || \u0027votre activite\u0027}`);\nlet corps = normalize(emailData.corps, \u0027\u0027);\nconst preview = normalize(emailData.preview_text, \u0027\u0027);\n\nif (!corps || corps.length \u003c 50) {\n  corps = `Bonjour ${prospect.nom || \u0027\u0027},\n\nJe me permets de vous contacter car votre profil a retenu notre attention. Je pense qu\u0027il pourrait y avoir un vrai fit entre votre contexte actuel et ce que nous pouvons apporter de concret.\n\nSi vous le souhaitez, je peux vous envoyer un message plus cible ou vous proposer un court echange pour voir si cela a du sens.\n\nBien cordialement`.trim();\n}\n\nconst motsSpam = [\u0027offre\u0027, \u0027promo\u0027, \u0027urgent\u0027, \u0027gratuit\u0027, \u0027exclusif\u0027, \u0027solde\u0027, \u0027remise\u0027, \u0027deal\u0027, \u0027promotion\u0027, \u0027cadeau\u0027];\nif (motsSpam.some(mot =\u003e objet.toLowerCase().includes(mot))) {\n  objet = `Echange avec ${prospect.nom || \u0027vous\u0027}`.trim();\n}\n\nconst nbMots = objet.trim().split(/\\s+/).length;\nif (nbMots \u003e 7) {\n  objet = objet.trim().split(/\\s+/).slice(0, 5).join(\u0027 \u0027);\n}\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    prospect_type: prospect.type,\n    chat_id: prospect.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: prospect.session_id,\n    score_pertinence: prospect.score_pertinence,\n    email_objet: objet,\n    email_corps: corps,\n    email_preview: preview,\n    genere_le: new Date().toISOString()\n  }\n}];"
+                                     },
+                      "id":  "0218dd3c-1a8d-49c4-a521-cf7bb07738da",
+                      "name":  "Extraire et Valider Email Genere",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1504,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "sendTo":  "={{ $json.prospect_email }}",
+                                         "subject":  "={{ $json.email_objet }}",
+                                         "emailType":  "text",
+                                         "message":  "={{ $json.email_corps }}",
+                                         "options":  {
+                                                         "appendAttribution":  false
+                                                     }
+                                     },
+                      "id":  "621efc34-7dcd-45f9-874e-87588931b3a9",
+                      "name":  "Gmail Envoyer Email Prospection",
+                      "type":  "n8n-nodes-base.gmail",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       1760,
+                                       0
+                                   ],
+                      "webhookId":  "95f0551f-8c47-4121-8b70-998e91ffe2ff",
+                      "credentials":  {
+                                          "gmailOAuth2":  {
+                                                              "id":  "828XrCCD0S4lNRT0",
+                                                              "name":  "Gmail account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE prospects SET statut = \u0027email_envoye\u0027, date_contact = NOW(), notes = COALESCE(notes, \u0027\u0027) || $1 WHERE id = $2",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ [\u0027Email envoye le \u0027 + new Date().toLocaleDateString(\u0027fr-FR\u0027) + \u0027 | Objet: \u0027 + $json.email_objet, $json.prospect_id] }}"
+                                                     }
+                                     },
+                      "id":  "87180120-f71a-4e52-9d5e-ac5b1ba6856c",
+                      "name":  "PostgreSQL Statut Email Envoye",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       2000,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "INSERT INTO emails_log (prospect_id, type_email, objet, corps, date_envoi, statut_envoi) VALUES ($1, \u0027prospection_initiale\u0027, $2, $3, NOW(), \u0027envoye\u0027)",
+                                         "options":  {
+                                                         "queryBatching":  "independently",
+                                                         "queryReplacement":  "={{ [$json.prospect_id, $json.email_objet, $json.email_corps] }}"
+                                                     }
+                                     },
+                      "id":  "0f597bf4-047e-4a4a-ac96-5db2cf72519a",
+                      "name":  "PostgreSQL Inserer Log Email",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       2256,
+                                       0
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "passThrough",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "12b32a1c-b497-438a-aa66-948add7713fe",
+                      "name":  "Merge Retour Boucle",
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       2512,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// Ce noeud est dÃƒÆ’Ã‚Â©clenchÃƒÆ’Ã‚Â© quand la boucle Split est terminÃƒÆ’Ã‚Â©e\n// Il compile les stats depuis PostgreSQL via les donnÃƒÆ’Ã‚Â©es passÃƒÆ’Ã‚Â©es\nconst triggerData = $(\u0027Execute Workflow Trigger\u0027).first().json;\n\nreturn [{\n  json: {\n    chat_id: triggerData.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: triggerData.session_id || \u0027N/A\u0027,\n    message: \u0027bilan_envois\u0027\n  }\n}];"
+                                     },
+                      "id":  "fb0d08b2-2a98-4c72-a4ac-2d194c33517d",
+                      "name":  "Compiler Rapport Envois",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1008,
+                                       224
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT COUNT(*) as nb_envoyes, AVG(score_pertinence)::numeric(4,1) as score_moyen FROM prospects WHERE statut = \u0027email_envoye\u0027 AND date_contact \u003e= NOW() - INTERVAL \u00271 hour\u0027",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "adecd738-5d71-4652-a56d-7acc9f211c84",
+                      "name":  "PostgreSQL Compter Emails Envoyes",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1264,
+                                       224
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "TRtaTGQNB10KiwWa",
+                                                           "name":  "Postgres agent_s"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "=7993226930",
+                                         "text":  "=ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â§ *Campagne email terminÃƒÆ’Ã‚Â©e !*\n\nÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ *{{ $json.nb_envoyes }} email(s) envoyÃƒÆ’Ã‚Â©(s)*\nÃƒÂ¢Ã‚Â­Ã‚Â Score moyen des prospects contactÃƒÆ’Ã‚Â©s : *{{ $json.score_moyen }}/10*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¦ _Les relances automatiques se feront J+3 et J+7 si pas de rÃƒÆ’Ã‚Â©ponse._\nÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â _Tu seras notifiÃƒÆ’Ã‚Â© dÃƒÆ’Ã‚Â¨s qu\u0027un prospect rÃƒÆ’Ã‚Â©pond._",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "10f82f01-b610-4716-920f-3b72c449bbd2",
+                      "name":  "Telegram Rapport Emails Envoyes",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       1504,
+                                       224
+                                   ],
+                      "webhookId":  "e070e92c-00b9-4918-aadf-c1c0d13bc252",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "zqN4TcHqzsYwQR24",
+                                                              "name":  "Telegram agent_s"
+                                                          }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "PostgreSQL Charger Prospects A Contacter",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "PostgreSQL Charger Prospects A Contacter":  {
+                                                                         "main":  [
+                                                                                      [
+                                                                                          {
+                                                                                              "node":  "IF Des Prospects Avec Email",
+                                                                                              "type":  "main",
+                                                                                              "index":  0
+                                                                                          }
+                                                                                      ]
+                                                                                  ]
+                                                                     },
+                        "IF Des Prospects Avec Email":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Split Boucle Emails",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ],
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Telegram Aucun Email a Envoyer",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Split Boucle Emails":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Wait Anti-Spam 30-90s",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ],
+                                                                 [
+                                                                     {
+                                                                         "node":  "Compiler Rapport Envois",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Wait Anti-Spam 30-90s":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "DeepSeek Generer Email Personnalise",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "DeepSeek Generer Email Personnalise":  {
+                                                                    "main":  [
+                                                                                 [
+                                                                                     {
+                                                                                         "node":  "Extraire et Valider Email Genere",
+                                                                                         "type":  "main",
+                                                                                         "index":  0
+                                                                                     }
+                                                                                 ]
+                                                                             ]
+                                                                },
+                        "Extraire et Valider Email Genere":  {
+                                                                 "main":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "Gmail Envoyer Email Prospection",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                             },
+                        "Gmail Envoyer Email Prospection":  {
+                                                                "main":  [
+                                                                             [
+                                                                                 {
+                                                                                     "node":  "PostgreSQL Statut Email Envoye",
+                                                                                     "type":  "main",
+                                                                                     "index":  0
+                                                                                 }
+                                                                             ]
+                                                                         ]
+                                                            },
+                        "PostgreSQL Statut Email Envoye":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "PostgreSQL Inserer Log Email",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "PostgreSQL Inserer Log Email":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Merge Retour Boucle",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         },
+                        "Merge Retour Boucle":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Split Boucle Emails",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Compiler Rapport Envois":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "PostgreSQL Compter Emails Envoyes",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "PostgreSQL Compter Emails Envoyes":  {
+                                                                  "main":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Telegram Rapport Emails Envoyes",
+                                                                                       "type":  "main",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                              }
+                    },
+    "pinData":  {
+
                 },
-                "options": {}
-            },
-            "id": "efbc7296-6e51-4d07-8c04-cb3e0eb7ae16",
-            "name": "IF Des Prospects Avec Email",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2,
-            "position": [
-                512,
-                0
-            ]
-        },
-        {
-            "parameters": {
-                "chatId": "=7993226930",
-                "text": "ℹ️ *Aucun prospect à contacter* en ce moment.\n\nTous les prospects ont déjà été contactés ou n'ont pas d'email disponible.",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
-            },
-            "id": "6352df2e-5410-4f7f-a143-9b8dcd8cc8db",
-            "name": "Telegram Aucun Email a Envoyer",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1.2,
-            "position": [
-                752,
-                224
-            ],
-            "webhookId": "b3dd59e8-8a96-4640-9070-1568f3722f1b",
-            "credentials": {
-                "telegramApi": {
-                    "id": "zqN4TcHqzsYwQR24",
-                    "name": "Telegram agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "options": {
-                    "reset": false
-                }
-            },
-            "id": "7682f893-9370-4710-99d6-ae62abc904c8",
-            "name": "Split Boucle Emails",
-            "type": "n8n-nodes-base.splitInBatches",
-            "typeVersion": 3,
-            "position": [
-                752,
-                0
-            ]
-        },
-        {
-            "parameters": {
-                "amount": "={{ Math.floor(Math.random() * 60) + 30 }}"
-            },
-            "id": "a1f45a4f-3d03-4c39-ba0e-305b40ffb39e",
-            "name": "Wait Anti-Spam 30-90s",
-            "type": "n8n-nodes-base.wait",
-            "typeVersion": 1.1,
-            "position": [
-                1008,
-                0
-            ],
-            "webhookId": "962961cb-0759-4004-bbf2-014e3530f4a4"
-        },
-        {
-            "parameters": {
-                "method": "POST",
-                "url": "https://api.deepseek.com/chat/completions",
-                "authentication": "genericCredentialType",
-                "genericAuthType": "httpHeaderAuth",
-                "sendBody": true,
-                "bodyParameters": {
-                    "parameters": [
-                        {}
-                    ]
-                },
-                "options": {}
-            },
-            "id": "84b96872-e507-493e-b2a4-9594ae5a621b",
-            "name": "DeepSeek Generer Email Personnalise",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.2,
-            "position": [
-                1264,
-                0
-            ],
-            "credentials": {
-                "httpHeaderAuth": {
-                    "id": "Fi7piKShxfsxAA0V",
-                    "name": "Header Auth agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "jsCode": "const response = $input.first().json;\nconst content = response.choices[0].message.content;\n\nlet emailData;\ntry {\n  const clean = content.replace(/```json|```/g, '').trim();\n  emailData = JSON.parse(clean);\n} catch(e) {\n  throw new Error('Erreur parsing email DeepSeek: ' + content.substring(0, 200));\n}\n\n// Validation\nif (!emailData.objet || emailData.objet.length === 0) {\n  throw new Error('Objet email manquant');\n}\nif (!emailData.corps || emailData.corps.length < 50) {\n  throw new Error('Corps email trop court ou manquant');\n}\n\n// Vérification mots spam dans l'objet\nconst motsSpam = ['offre', 'promo', 'urgent', 'gratuit', 'exclusif', 'solde', 'remise', 'deal', 'promotion', 'cadeau'];\nconst objetLower = emailData.objet.toLowerCase();\nconst hasSpam = motsSpam.some(mot => objetLower.includes(mot));\nif (hasSpam) {\n  console.warn('Attention : objet potentiellement spam détecté, continuer quand même');\n}\n\n// Vérifier que l'objet ne dépasse pas 7 mots\nconst nbMots = emailData.objet.trim().split(/\\s+/).length;\nif (nbMots > 7) {\n  // Tronquer à 5 mots\n  emailData.objet = emailData.objet.trim().split(/\\s+/).slice(0, 5).join(' ');\n}\n\n// Récupérer les données prospect\nconst prospect = $('Split Boucle Emails').first().json;\n\nreturn [{\n  json: {\n    prospect_id: prospect.id,\n    prospect_email: prospect.email,\n    prospect_nom: prospect.nom,\n    prospect_type: prospect.type,\n    chat_id: prospect.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: prospect.session_id,\n    score_pertinence: prospect.score_pertinence,\n    email_objet: emailData.objet,\n    email_corps: emailData.corps,\n    email_preview: emailData.preview_text || '',\n    genere_le: new Date().toISOString()\n  }\n}];"
-            },
-            "id": "0218dd3c-1a8d-49c4-a521-cf7bb07738da",
-            "name": "Extraire et Valider Email Genere",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                1504,
-                0
-            ]
-        },
-        {
-            "parameters": {
-                "sendTo": "={{ $json.prospect_email }}",
-                "subject": "={{ $json.email_objet }}",
-                "emailType": "text",
-                "message": "={{ $json.email_corps }}",
-                "options": {
-                    "appendAttribution": false
-                }
-            },
-            "id": "621efc34-7dcd-45f9-874e-87588931b3a9",
-            "name": "Gmail Envoyer Email Prospection",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
-            "position": [
-                1760,
-                0
-            ],
-            "webhookId": "95f0551f-8c47-4121-8b70-998e91ffe2ff",
-            "credentials": {
-                "gmailOAuth2": {
-                    "id": "828XrCCD0S4lNRT0",
-                    "name": "Gmail account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "UPDATE prospects SET statut = 'email_envoye', date_contact = NOW(), notes = COALESCE(notes, '') || $1 WHERE id = $2",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ ['Email envoyé le ' + new Date().toLocaleDateString('fr-FR') + ' | Objet: ' + $json.email_objet, $json.prospect_id].join(',') }}"
-                }
-            },
-            "id": "87180120-f71a-4e52-9d5e-ac5b1ba6856c",
-            "name": "PostgreSQL Statut Email Envoye",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                2000,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "INSERT INTO emails_log (prospect_id, type_email, objet, corps, date_envoi, statut_envoi) VALUES ($1, 'prospection_initiale', $2, $3, NOW(), 'envoye')",
-                "options": {
-                    "queryBatching": "independently",
-                    "queryReplacement": "={{ [$json.prospect_id, $json.email_objet, $json.email_corps].join('|||') }}"
-                }
-            },
-            "id": "0f597bf4-047e-4a4a-ac96-5db2cf72519a",
-            "name": "PostgreSQL Inserer Log Email",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                2256,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "mode": "passThrough",
-                "options": {}
-            },
-            "id": "12b32a1c-b497-438a-aa66-948add7713fe",
-            "name": "Merge Retour Boucle",
-            "type": "n8n-nodes-base.merge",
-            "typeVersion": 2.1,
-            "position": [
-                2512,
-                0
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "// Ce noeud est déclenché quand la boucle Split est terminée\n// Il compile les stats depuis PostgreSQL via les données passées\nconst triggerData = $('Execute Workflow Trigger').first().json;\n\nreturn [{\n  json: {\n    chat_id: triggerData.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: triggerData.session_id || 'N/A',\n    message: 'bilan_envois'\n  }\n}];"
-            },
-            "id": "fb0d08b2-2a98-4c72-a4ac-2d194c33517d",
-            "name": "Compiler Rapport Envois",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                1008,
-                224
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT COUNT(*) as nb_envoyes, AVG(score_pertinence)::numeric(4,1) as score_moyen FROM prospects WHERE statut = 'email_envoye' AND date_contact >= NOW() - INTERVAL '1 hour'",
-                "options": {}
-            },
-            "id": "adecd738-5d71-4652-a56d-7acc9f211c84",
-            "name": "PostgreSQL Compter Emails Envoyes",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                1264,
-                224
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "TRtaTGQNB10KiwWa",
-                    "name": "Postgres agent_s"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "chatId": "=7993226930",
-                "text": "=📧 *Campagne email terminée !*\n\n✅ *{{ $json.nb_envoyes }} email(s) envoyé(s)*\n⭐ Score moyen des prospects contactés : *{{ $json.score_moyen }}/10*\n\n📅 _Les relances automatiques se feront J+3 et J+7 si pas de réponse._\n🔔 _Tu seras notifié dès qu'un prospect répond._",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
-            },
-            "id": "10f82f01-b610-4716-920f-3b72c449bbd2",
-            "name": "Telegram Rapport Emails Envoyes",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1.2,
-            "position": [
-                1504,
-                224
-            ],
-            "webhookId": "e070e92c-00b9-4918-aadf-c1c0d13bc252",
-            "credentials": {
-                "telegramApi": {
-                    "id": "zqN4TcHqzsYwQR24",
-                    "name": "Telegram agent_s"
-                }
-            }
-        }
-    ],
-    "connections": {
-        "Execute Workflow Trigger": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Charger Prospects A Contacter",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Charger Prospects A Contacter": {
-            "main": [
-                [
-                    {
-                        "node": "IF Des Prospects Avec Email",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "IF Des Prospects Avec Email": {
-            "main": [
-                [
-                    {
-                        "node": "Split Boucle Emails",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Telegram Aucun Email a Envoyer",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Split Boucle Emails": {
-            "main": [
-                [
-                    {
-                        "node": "Wait Anti-Spam 30-90s",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Compiler Rapport Envois",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Wait Anti-Spam 30-90s": {
-            "main": [
-                [
-                    {
-                        "node": "DeepSeek Generer Email Personnalise",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "DeepSeek Generer Email Personnalise": {
-            "main": [
-                [
-                    {
-                        "node": "Extraire et Valider Email Genere",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Extraire et Valider Email Genere": {
-            "main": [
-                [
-                    {
-                        "node": "Gmail Envoyer Email Prospection",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Gmail Envoyer Email Prospection": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Statut Email Envoye",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Statut Email Envoye": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Inserer Log Email",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Inserer Log Email": {
-            "main": [
-                [
-                    {
-                        "node": "Merge Retour Boucle",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Merge Retour Boucle": {
-            "main": [
-                [
-                    {
-                        "node": "Split Boucle Emails",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Compiler Rapport Envois": {
-            "main": [
-                [
-                    {
-                        "node": "PostgreSQL Compter Emails Envoyes",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "PostgreSQL Compter Emails Envoyes": {
-            "main": [
-                [
-                    {
-                        "node": "Telegram Rapport Emails Envoyes",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        }
-    },
-    "pinData": {},
-    "meta": {
-        "templateCredsSetupCompleted": true,
-        "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
-    }
+    "meta":  {
+                 "templateCredsSetupCompleted":  true,
+                 "instanceId":  "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
+             }
 }
