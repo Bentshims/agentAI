@@ -25,7 +25,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst texte = message.text || \u0027\u0027;\nconst chat_id = String(message.chat?.id || \u0027\u0027);\nconst from = message.from || {};\n\n// Ignorer les messages vides ou trop courts\nif (!texte || texte.length \u003c 2) {\n  return [];\n}\n\nreturn [{\n  json: {\n    texte: texte,\n    chat_id: chat_id,\n    prenom: from.first_name || \u0027\u0027,\n    message_id: message.message_id || null\n  }\n}];"
+                "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst texte = message.text || \u0027\u0027;\nconst chat_id = String(message.chat?.id || \u0027\u0027);\nconst from = message.from || {};\n\n// Ignorer les messages vides ou trop courts.\nif (!texte || texte.length < 2) {\n  return [];\n}\n\nreturn [{\n  json: {\n    texte: texte,\n    chat_id: chat_id,\n    prenom: from.first_name || \u0027\u0027,\n    message_id: message.message_id || null\n  }\n}];"
             },
             "id": "16c0ab3a-d155-450b-a310-a689d4157384",
             "name": "Extraire Message Telegram",
@@ -64,7 +64,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const response = $input.first().json;\nconst content = (response.choices[0].message.content || \u0027\u0027).trim();\nconst messageData = $(\u0027Extraire Message Telegram\u0027).first().json;\n\n// Parser l\u0027index ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â DeepSeek doit retourner 0, 1 ou 2\nlet index = parseInt(content, 10);\nif (isNaN(index) || index \u003c 0 || index \u003e 2) {\n  index = 2; // Fallback sur aide\n}\n\nreturn [{\n  json: {\n    intention_index: index,\n    texte: messageData.texte,\n    chat_id: messageData.chat_id,\n    prenom: messageData.prenom\n  }\n}];"
+                "jsCode": "const response = $input.first().json;\nconst content = (response.choices[0].message.content || \u0027\u0027).trim();\nconst messageData = $(\u0027Extraire Message Telegram\u0027).first().json;\n\n// Parser l\u0027index. DeepSeek doit retourner 0, 1 ou 2.\nlet index = parseInt(content, 10);\nif (isNaN(index) || index < 0 || index > 2) {\n  index = 2; // Fallback sur aide.\n}\n\nreturn [{\n  json: {\n    intention_index: index,\n    texte: messageData.texte,\n    chat_id: messageData.chat_id,\n    prenom: messageData.prenom\n  }\n}];"
             },
             "id": "efe4d039-3bea-4e3c-9e64-64cf1901c676",
             "name": "Extraire Index Intention",

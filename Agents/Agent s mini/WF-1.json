@@ -39,7 +39,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const item = $input.first().json;\nconst content = item.choices[0].message.content;\n\nlet params;\ntry {\n  const clean = content.replace(/```json|```/g, \u0027\u0027).trim();\n  params = JSON.parse(clean);\n} catch(e) {\n  throw new Error(\u0027Erreur parsing JSON DeepSeek: \u0027 + content);\n}\n\n// RÃƒÆ’Ã‚Â©cupÃƒÆ’Ã‚Â©rer chat_id depuis WF-0\nconst triggerData = $(\u0027When Called By WF-0\u0027).first().json;\nparams.chat_id = String(triggerData.chat_id || \u0027\u0027);\nparams.message_original = triggerData.texte || \u0027\u0027;\nparams.session_id = \u0027acq_\u0027 + Date.now();\nparams.created_at = new Date().toISOString();\n\n// Validation des champs critiques\nif (!params.requetes_google || !Array.isArray(params.requetes_google) || params.requetes_google.length === 0) {\n  throw new Error(\u0027Champ requetes_google manquant ou vide dans la rÃƒÆ’Ã‚Â©ponse DeepSeek\u0027);\n}\nif (![\u0027entreprise\u0027, \u0027freelance\u0027, \u0027particulier\u0027].includes(params.type)) {\n  throw new Error(\u0027Type de profil invalide: \u0027 + params.type);\n}\n\nreturn [{ json: params }];"
+                "jsCode": "const item = $input.first().json;\nconst content = item.choices[0].message.content;\n\nlet params;\ntry {\n  const clean = content.replace(/```json|```/g, \u0027\u0027).trim();\n  params = JSON.parse(clean);\n} catch(e) {\n  throw new Error(\u0027Erreur parsing JSON DeepSeek: \u0027 + content);\n}\n\n// Recuperer chat_id depuis WF-0.\nconst triggerData = $(\u0027When Called By WF-0\u0027).first().json;\nparams.chat_id = String(triggerData.chat_id || \u0027\u0027);\nparams.message_original = triggerData.texte || \u0027\u0027;\nparams.session_id = \u0027acq_\u0027 + Date.now();\nparams.created_at = new Date().toISOString();\n\n// Validation des champs critiques.\nif (!params.requetes_google || !Array.isArray(params.requetes_google) || params.requetes_google.length === 0) {\n  throw new Error(\u0027Champ requetes_google manquant ou vide dans la reponse DeepSeek\u0027);\n}\nif (![\u0027entreprise\u0027, \u0027freelance\u0027, \u0027particulier\u0027].includes(params.type)) {\n  throw new Error(\u0027Type de profil invalide: \u0027 + params.type);\n}\n\nreturn [{ json: params }];"
             },
             "id": "0c2417c4-7fcf-4c6f-a4be-82bee2a4d47d",
             "name": "Extraire Parametres Recherche",
@@ -53,7 +53,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â *Recherche lancÃƒÆ’Ã‚Â©e !*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¹ *Cible :* {{ $json.description_cible }}\nÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â·ÃƒÂ¯Ã‚Â¸Ã‚Â *Type :* `{{ $json.type }}`\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â *Localisation :* {{ $json.localisation }}\nÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â­ *Secteur :* {{ $json.secteur }}\nÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ *Objectif :* {{ $json.nb_resultats }} profils\n\n_Recherche en cours sur Google et LinkedIn... ÃƒÂ¢Ã‚ÂÃ‚Â³_",
+                "text": "=*Recherche lancee*\n\n*Cible :* {{ $json.description_cible }}\n*Type :* `{{ $json.type }}`\n*Localisation :* {{ $json.localisation }}\n*Secteur :* {{ $json.secteur }}\n*Objectif :* {{ $json.nb_resultats }} profils\n\n_Recherche en cours sur Google et LinkedIn..._",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -647,7 +647,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ *Scraping terminÃƒÆ’Ã‚Â© !*\n\nÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¾ *{{ $input.all().length }} prospects sauvegardÃƒÆ’Ã‚Â©s en base*\nÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Å¡ Session : `{{ $(\u0027Extraire Parametres Recherche\u0027).first().json.session_id }}`\n\nÃƒÂ°Ã…Â¸Ã‚Â¤Ã¢â‚¬â€œ *WF-2 en cours :* analyse et scoring DeepSeek...\n_Tu recevras les fiches complÃƒÆ’Ã‚Â¨tes dans quelques instants._",
+                "text": "=*Scraping termine*\n\n*{{ $input.all().length }} prospects sauvegardes en base*\nSession : `{{ $(\u0027Extraire Parametres Recherche\u0027).first().json.session_id }}`\n\n*WF-2 en cours :* analyse et scoring DeepSeek...\n_Tu recevras les fiches completes dans quelques instants._",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }

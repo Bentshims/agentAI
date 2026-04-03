@@ -3,7 +3,7 @@
         {
             "parameters": {},
             "id": "48d67b09-2d2a-4570-b76a-7466460f5d6f",
-            "name": "Execute Workflow Trigger",
+            "name": "When Called By WF-2",
             "type": "n8n-nodes-base.executeWorkflowTrigger",
             "typeVersion": 1,
             "position": [
@@ -62,7 +62,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â *Aucun prospect ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  contacter* en ce moment.\n\nTous les prospects ont dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© contactÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s ou n\u0027ont pas d\u0027email disponible.",
+                "text": "*Aucun prospect a contacter* en ce moment.\n\nTous les prospects ont deja ete contactes ou n\u0027ont pas d\u0027email disponible.",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -241,7 +241,7 @@
         },
         {
             "parameters": {
-                "jsCode": "// Ce noeud est dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©clenchÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© quand la boucle Split est terminÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e\n// Il compile les stats depuis PostgreSQL via les donnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es passÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es\nconst triggerData = $(\u0027Execute Workflow Trigger\u0027).first().json;\n\nreturn [{\n  json: {\n    chat_id: triggerData.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: triggerData.session_id || \u0027N/A\u0027,\n    message: \u0027bilan_envois\u0027\n  }\n}];"
+                "jsCode": "// Ce noeud est declenche quand la boucle Split est terminee.\n// Il compile les stats depuis PostgreSQL via les donnees passees.\nconst triggerData = $(\u0027When Called By WF-2\u0027).first().json;\n\nreturn [{\n  json: {\n    chat_id: triggerData.chat_id || $vars.TELEGRAM_CHAT_ID,\n    session_id: triggerData.session_id || \u0027N/A\u0027,\n    message: \u0027bilan_envois\u0027\n  }\n}];"
             },
             "id": "fb0d08b2-2a98-4c72-a4ac-2d194c33517d",
             "name": "Compiler Rapport Envois",
@@ -276,7 +276,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ *Campagne email terminÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e !*\n\nÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ *{{ $json.nb_envoyes }} email(s) envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©(s)*\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚Â­Ãƒâ€šÃ‚Â Score moyen des prospects contactÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s : *{{ $json.score_moyen }}/10*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ _Les relances automatiques se feront J+3 et J+7 si pas de rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponse._\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â _Tu seras notifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s qu\u0027un prospect rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©pond._",
+                "text": "=*Campagne email terminee*\n\n*{{ $json.nb_envoyes }} email(s) envoye(s)*\nScore moyen des prospects contactes : *{{ $json.score_moyen }}/10*\n\n_Les relances automatiques se feront a J+3 et J+7 si aucune reponse n\u0027arrive._\n_Tu seras notifie des qu\u0027un prospect repond._",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -299,7 +299,7 @@
         }
     ],
     "connections": {
-        "Execute Workflow Trigger": {
+        "When Called By WF-2": {
             "main": [
                 [
                     {

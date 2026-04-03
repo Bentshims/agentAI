@@ -1,4 +1,4 @@
-{
+﻿{
     "nodes": [
         {
             "parameters": {},
@@ -86,7 +86,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Je n\u0027ai pas compris cette demande.\n\nExemples valides :\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ _\"Planifie appel prospect 3, mardi 14h\"_\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ _\"Appel avec Agence Lyon demain ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  10h30\"_\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ _\"RDV prospect Jean Dupont vendredi 15h\"_",
+                "text": "*Je n\u0027ai pas compris cette demande.*\n\nExemples valides :\n- _\"Planifie appel prospect 3, mardi 14h\"_\n- _\"Appel avec Agence Lyon demain a 10h30\"_\n- _\"RDV prospect Jean Dupont vendredi 15h\"_",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -141,8 +141,8 @@
                 "start": "={{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_iso }}",
                 "end": "={{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_fin_iso }}",
                 "additionalFields": {
-                    "description": "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ Prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || \u0027N/A\u0027 }}\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ Email : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.email || \u0027N/A\u0027 }}\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾ TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©l : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.telephone || \u0027N/A\u0027 }}\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â LinkedIn : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.linkedin_url || \u0027N/A\u0027 }}\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â­ Secteur : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.secteur || \u0027N/A\u0027 }}\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚Â­Ãƒâ€šÃ‚Â Score : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.score_pertinence || \u0027N/A\u0027 }}/10\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â Notes : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.notes_appel || \u0027Aucune note\u0027 }}\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ Profil :\n{{ ($(\u0027PostgreSQL Charger Prospect\u0027).first().json.description || \u0027N/A\u0027).substring(0, 400) }}",
-                    "summary": "=ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾ Appel prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}"
+                    "description": "=Prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || \u0027N/A\u0027 }}\nEmail : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.email || \u0027N/A\u0027 }}\nTel : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.telephone || \u0027N/A\u0027 }}\nLinkedIn : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.linkedin_url || \u0027N/A\u0027 }}\nSecteur : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.secteur || \u0027N/A\u0027 }}\nScore : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.score_pertinence || \u0027N/A\u0027 }}/10\n\nNotes : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.notes_appel || \u0027Aucune note\u0027 }}\n\nProfil :\n{{ ($(\u0027PostgreSQL Charger Prospect\u0027).first().json.description || \u0027N/A\u0027).substring(0, 400) }}",
+                    "summary": "=Appel prospect : {{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}"
                 }
             },
             "id": "5bdafe21-45bb-42f8-82d2-13a37dac803b",
@@ -211,7 +211,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "=ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ *Appel planifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© !*\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾ *{{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}*\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ *{{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_affichage }}* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  *{{ $(\u0027Extraire Donnees Appel\u0027).first().json.heure_affichage }}*\nÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â± DurÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.duree_minutes }} minutes\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©nement crÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© dans Google Calendar\n\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â *Tu seras notifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© :*\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ 3h avant l\u0027appel\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ 1h avant l\u0027appel\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ 30 min avant l\u0027appel\nÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ l\u0027heure H avec la fiche complÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨te",
+                "text": "=*Appel planifie*\n\n*{{ $(\u0027PostgreSQL Charger Prospect\u0027).first().json.nom || $(\u0027Extraire Donnees Appel\u0027).first().json.prospect_nom }}*\n*{{ $(\u0027Extraire Donnees Appel\u0027).first().json.date_appel_affichage }}* a *{{ $(\u0027Extraire Donnees Appel\u0027).first().json.heure_affichage }}*\nDuree : {{ $(\u0027Extraire Donnees Appel\u0027).first().json.duree_minutes }} minutes\n\nEvenement cree dans Google Calendar.\n\n*Tu seras notifie :*\n- 3h avant l\u0027appel\n- 1h avant l\u0027appel\n- 30 min avant l\u0027appel\n- a l\u0027heure H avec la fiche complete",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -307,7 +307,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const now = new Date();\nconst items = $input.all();\nconst rappelsAEnvoyer = [];\n\nfor (const item of items) {\n  const a = item.json;\n  const dateAppel = new Date(a.date_appel);\n  const diffMs = dateAppel.getTime() - now.getTime();\n  const diffMin = diffMs / 60000;\n\n  if (diffMin \u003e= 175 \u0026\u0026 diffMin \u003c= 185 \u0026\u0026 !a.rappel_3h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00273h\u0027, emoji: \u0027ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â°\u0027, message_rappel: \u0027dans 3 heures\u0027 } });\n  } else if (diffMin \u003e= 55 \u0026\u0026 diffMin \u003c= 65 \u0026\u0026 !a.rappel_1h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00271h\u0027, emoji: \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â\u0027, message_rappel: \u0027dans 1 heure\u0027 } });\n  } else if (diffMin \u003e= 25 \u0026\u0026 diffMin \u003c= 35 \u0026\u0026 !a.rappel_30min_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u002730min\u0027, emoji: \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¨\u0027, message_rappel: \u0027dans 30 minutes\u0027 } });\n  } else if (diffMin \u003e= -5 \u0026\u0026 diffMin \u003c= 5 \u0026\u0026 !a.rappel_heure_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u0027heure_h\u0027, emoji: \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾\u0027, message_rappel: \"C\u0027EST L\u0027HEURE !\" } });\n  }\n}\n\nreturn rappelsAEnvoyer.length \u003e 0 ? rappelsAEnvoyer : [];"
+                "jsCode": "const now = new Date();\nconst items = $input.all();\nconst rappelsAEnvoyer = [];\n\nfor (const item of items) {\n  const a = item.json;\n  const dateAppel = new Date(a.date_appel);\n  const diffMs = dateAppel.getTime() - now.getTime();\n  const diffMin = diffMs / 60000;\n\n  if (diffMin >= 175 && diffMin <= 185 && !a.rappel_3h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00273h\u0027, prefixe: \u0027Rappel\u0027, message_rappel: \u0027dans 3 heures\u0027 } });\n  } else if (diffMin >= 55 && diffMin <= 65 && !a.rappel_1h_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u00271h\u0027, prefixe: \u0027Rappel\u0027, message_rappel: \u0027dans 1 heure\u0027 } });\n  } else if (diffMin >= 25 && diffMin <= 35 && !a.rappel_30min_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u002730min\u0027, prefixe: \u0027Rappel\u0027, message_rappel: \u0027dans 30 minutes\u0027 } });\n  } else if (diffMin >= -5 && diffMin <= 5 && !a.rappel_heure_envoye) {\n    rappelsAEnvoyer.push({ json: { ...a, type_rappel: \u0027heure_h\u0027, prefixe: \u0027Alerte\u0027, message_rappel: \u0027c\u0027est l\u0027heure\u0027 } });\n  }\n}\n\nreturn rappelsAEnvoyer.length > 0 ? rappelsAEnvoyer : [];"
             },
             "id": "e6852e16-85cb-4b1a-9ecb-fbdcf3e10116",
             "name": "Calculer Rappels a Envoyer",
@@ -353,7 +353,7 @@
         {
             "parameters": {
                 "chatId": "=7993226930",
-                "text": "={{ \n  const a = $json;\n  const dateAppel = new Date(a.date_appel);\n  const heure = dateAppel.toLocaleTimeString(\u0027fr-FR\u0027, { hour: \u00272-digit\u0027, minute: \u00272-digit\u0027 });\n  \n  let msg = a.emoji + \u0027 *Rappel appel ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â \u0027 + a.message_rappel + \u0027*\\n\\n\u0027;\n  msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾ *Prospect :* \u0027 + a.prospect_nom + \u0027\\n\u0027;\n  msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â *Heure :* \u0027 + heure + \u0027\\n\u0027;\n  if (a.email) msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â§ *Email :* \u0027 + a.email + \u0027\\n\u0027;\n  if (a.telephone) msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¾ *TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©l :* \u0027 + a.telephone + \u0027\\n\u0027;\n  if (a.linkedin_url) msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â *LinkedIn :* \u0027 + a.linkedin_url + \u0027\\n\u0027;\n  if (a.secteur) msg += \u0027ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â­ *Secteur :* \u0027 + a.secteur + \u0027\\n\u0027;\n  if (a.score_pertinence) msg += \u0027ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚Â­Ãƒâ€šÃ‚Â *Score :* \u0027 + a.score_pertinence + \u0027/10\\n\u0027;\n  if (a.type_rappel === \u0027heure_h\u0027) {\n    msg += \u0027\\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ *Profil :*\\n\u0027;\n    msg += (a.description || \u0027Aucune description\u0027).substring(0, 400) + \u0027\\n\u0027;\n    if (a.notes) msg += \u0027\\nÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â *Notes :* \u0027 + a.notes;\n  }\n  return msg;\n}}",
+                "text": "={{ \n  const a = $json;\n  const dateAppel = new Date(a.date_appel);\n  const heure = dateAppel.toLocaleTimeString(\u0027fr-FR\u0027, { hour: \u00272-digit\u0027, minute: \u00272-digit\u0027 });\n  \n  let msg = `*${a.prefixe} appel ${a.message_rappel}*\\n\\n`;\n  msg += `*Prospect :* ${a.prospect_nom}\\n`;\n  msg += `*Heure :* ${heure}\\n`;\n  if (a.email) msg += `*Email :* ${a.email}\\n`;\n  if (a.telephone) msg += `*Tel :* ${a.telephone}\\n`;\n  if (a.linkedin_url) msg += `*LinkedIn :* ${a.linkedin_url}\\n`;\n  if (a.secteur) msg += `*Secteur :* ${a.secteur}\\n`;\n  if (a.score_pertinence) msg += `*Score :* ${a.score_pertinence}/10\\n`;\n  if (a.type_rappel === \u0027heure_h\u0027) {\n    msg += `\\n*Profil :*\\n${(a.description || \u0027Aucune description\u0027).substring(0, 400)}\\n`;\n    if (a.notes) msg += `\\n*Notes :* ${a.notes}`;\n  }\n  return msg;\n}}",
                 "additionalFields": {
                     "parse_mode": "Markdown"
                 }
@@ -600,3 +600,5 @@
         "instanceId": "39e70ee0880d01650d204969036230350e755320fdd8b6bc8a0de1cba20f6297"
     }
 }
+
+
